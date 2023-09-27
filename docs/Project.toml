@@ -1,0 +1,3 @@
+[deps]
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+PopGenEstimatorComparison = "e1b94691-4686-402c-a7a5-4b6f1d1ffa14"

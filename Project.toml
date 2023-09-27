@@ -1,0 +1,13 @@
+name = "PopGenEstimatorComparison"
+uuid = "e1b94691-4686-402c-a7a5-4b6f1d1ffa14"
+authors = ["Olivier Labayle <olabayle@gmail.com> and contributors"]
+version = "1.0.0-DEV"
+
+[compat]
+julia = "1.6"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
