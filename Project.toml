@@ -3,6 +3,20 @@ uuid = "e1b94691-4686-402c-a7a5-4b6f1d1ffa14"
 authors = ["Olivier Labayle <olabayle@gmail.com> and contributors"]
 version = "1.0.0-DEV"
 
+[deps]
+Arrow = "69666777-d1a9-59fb-9406-91d4454c9d45"
+CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
+CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+GLMNet = "8d5ece8b-de18-5317-b113-243142960cc6"
+Literate = "98b081ad-f1c9-55d3-8b20-4c87d4299306"
+MLJ = "add582a8-e3ab-11e8-2d5e-e98b27df1bc7"
+MLJBase = "a7f614a8-145f-11e9-1d2a-a57a1082229d"
+MLJGLMInterface = "caf8df21-4939-456d-ac9c-5fefbfb04c0c"
+MLJLinearModels = "6ee0df7b-362f-4a72-a706-9e79364fb692"
+MLJXGBoostInterface = "54119dfa-1dab-4055-a167-80440f4f7a91"
+TMLE = "8afdd2fb-6e73-43df-8b62-b1650cd9c8cf"
+
 [compat]
 julia = "1.6"
 
