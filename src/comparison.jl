@@ -1,22 +1,11 @@
-using CSV
-using DataFrames
-using CairoMakie
-using Arrow
-using PopGenEstimatorComparison
-using MLJ
-using MLJLinearModels
-using TMLE
-using PopGenEstimatorComparison
-using MLJXGBoostInterface
-
 # Constants
 
-nfolds = 3
-cv = CV(nfolds=nfolds)
-stratified_cv = StratifiedCV(nfolds=nfolds)
-xgboost_classifier = XGBoostClassifier(tree_method="hist")
-xgboost_regressor = XGBoostRegressor(tree_method="hist")
-all_models = Dict(
+const nfolds = 3
+const cv = CV(nfolds=nfolds)
+const stratified_cv = StratifiedCV(nfolds=nfolds)
+const xgboost_classifier = XGBoostClassifier(tree_method="hist")
+const xgboost_regressor = XGBoostRegressor(tree_method="hist")
+const all_models = Dict(
     :GLM_CATEGORICAL => LogisticClassifier(),
     :GLM_CONTINUOUS => LinearRegressor(),
     :GLMNet_CATEGORICAL => GLMNetClassifier(resampling=stratified_cv),
@@ -122,74 +111,77 @@ end
 function treatment_model(models; flavor=:GLM)
     return models[Symbol(flavor, :_CATEGORICAL)]
 end
-    
-# Load Data
-DATA_DIR = "data"
-problematic_estimands = CSV.read(joinpath(DATA_DIR, "problematic_estimands.csv"), DataFrame)
-dataset = DataFrame(Arrow.Table(joinpath(DATA_DIR, "final.data.arrow")))
 
-# Estimand
-row = problematic_estimands[1, :]
-Ψ = estimand_from_results_row(row)
-
-# Coerce datatypes
-if outcome_is_binary(Ψ.outcome, dataset) 
-    dataset[!, Ψ.outcome] = categorical(dataset[!, Ψ.outcome])
-end
-for treatment in keys(Ψ.treatment_values)
-    dataset[!, treatment] = categorical(dataset[!, treatment])
-end
-for covariate in (first(Ψ.treatment_confounders)..., Ψ.outcome_extra_covariates...)
-    dataset[!, covariate] = float(dataset[!, covariate])
+function coercetypes!(dataset, Ψ)
+    if outcome_is_binary(Ψ.outcome, dataset) 
+        dataset[!, Ψ.outcome] = categorical(dataset[!, Ψ.outcome])
+    end
+    for treatment in keys(Ψ.treatment_values)
+        dataset[!, treatment] = categorical(dataset[!, treatment])
+    end
+    for covariate in (first(Ψ.treatment_confounders)..., Ψ.outcome_extra_covariates...)
+        dataset[!, covariate] = float(dataset[!, covariate])
+    end
 end
 
-# Estimators
 
-model_keys = tuple(Ψ.outcome, keys(Ψ.treatment_values)...)
-glm_η̂s = NamedTuple{model_keys}(
-    [outcome_model(all_models, Ψ.outcome, dataset; flavor=:GLM), (treatment_model(all_models, flavor=:GLM) for _ in 1:length(model_keys) - 1)...]
-)
-glmnet_η̂s = NamedTuple{model_keys}(
-    [outcome_model(all_models, Ψ.outcome, dataset; flavor=:GLMNet), (treatment_model(all_models, flavor=:GLMNet) for _ in 1:length(model_keys) - 1)...]
-)
-sl_η̂s = NamedTuple{model_keys}(
-    [outcome_model(all_models, Ψ.outcome, dataset; flavor=:SL), (treatment_model(all_models, flavor=:SL) for _ in 1:length(model_keys) - 1)...]
-)
-
-Ψ̂s = (
-    # SL models
-    "TMLE(SL)" => TMLEE(sl_η̂s, weighted=false,),
-    "Weighted-TMLE(SL)" => TMLEE(sl_η̂s, weighted=true),
-    "OSE(SL)" => OSE(sl_η̂s),
-    "CV-TMLE(SL)" => TMLEE(sl_η̂s, weighted=false, resampling=cv),
-    "Weighted-CV-TMLE(SL)" => TMLEE(sl_η̂s, weighted=true, resampling=cv),
-    "CV-OSE(SL)" => OSE(sl_η̂s, resampling=cv),
-    # GLMNet models
-    "TMLE(GLMNet)" => TMLEE(glmnet_η̂s, weighted=false,),
-    "Weighted-TMLE(GLMNet)" => TMLEE(glmnet_η̂s, weighted=true),
-    "OSE(GLMNet)" => OSE(glmnet_η̂s),
-    "CV-TMLE(GLMNet)" => TMLEE(glmnet_η̂s, weighted=false, resampling=cv),
-    "Weighted-CV-TMLE(GLMNet)" => TMLEE(glmnet_η̂s, weighted=true, resampling=cv),
-    "CV-OSE(GLMNet)" => OSE(glmnet_η̂s, resampling=cv),
-    # GLM models
-    "TMLE(GLM)" => TMLEE(glm_η̂s, weighted=false,),
-    "Weighted-TMLE(GLM)" => TMLEE(glm_η̂s, weighted=true),
-    "OSE(GLM)" => OSE(glm_η̂s),
-    "CV-TMLE(GLM)" => TMLEE(glm_η̂s, weighted=false, resampling=cv),
-    "Weighted-CV-TMLE(GLM)" => TMLEE(glm_η̂s, weighted=true, resampling=cv),
-    "CV-OSE(GLM)" => OSE(glm_η̂s, resampling=cv),
-)
-
-# Estimation
-
-cache = Dict()
-results = []
-for (Ψ̂name, Ψ̂) ∈ Ψ̂s
-    @info string("Estimating Ψ with: ", Ψ̂name, ".")
-    result, cache = Ψ̂(Ψ, dataset, cache=cache, verbosity=0)
-    push!(results, Ψ̂name => result)
+function compare_estimators(parsed_args)
+    verbosity = parsed_args["verbosity"]
+    # Load Data
+    problematic_estimands = CSV.read(parsed_args["estimand-list"], DataFrame)
+    dataset = DataFrame(Arrow.Table(parsed_args["dataset"]))
+    # Estimand
+    row = problematic_estimands[parsed_args["id"], :]
+    Ψ = estimand_from_results_row(row)
+    # Coerce datatypes
+    coercetypes!(dataset, Ψ)
+    # Estimators
+    model_keys = tuple(Ψ.outcome, keys(Ψ.treatment_values)...)
+    glm_η̂s = NamedTuple{model_keys}(
+        [outcome_model(all_models, Ψ.outcome, dataset; flavor=:GLM), (treatment_model(all_models, flavor=:GLM) for _ in 1:length(model_keys) - 1)...]
+    )
+    glmnet_η̂s = NamedTuple{model_keys}(
+        [outcome_model(all_models, Ψ.outcome, dataset; flavor=:GLMNet), (treatment_model(all_models, flavor=:GLMNet) for _ in 1:length(model_keys) - 1)...]
+    )
+    sl_η̂s = NamedTuple{model_keys}(
+        [outcome_model(all_models, Ψ.outcome, dataset; flavor=:SL), (treatment_model(all_models, flavor=:SL) for _ in 1:length(model_keys) - 1)...]
+    )
+    Ψ̂s = (
+        # SL models
+        "TMLE(SL)" => TMLEE(sl_η̂s, weighted=false,),
+        "Weighted-TMLE(SL)" => TMLEE(sl_η̂s, weighted=true),
+        "OSE(SL)" => OSE(sl_η̂s),
+        "CV-TMLE(SL)" => TMLEE(sl_η̂s, weighted=false, resampling=cv),
+        "Weighted-CV-TMLE(SL)" => TMLEE(sl_η̂s, weighted=true, resampling=cv),
+        "CV-OSE(SL)" => OSE(sl_η̂s, resampling=cv),
+        # GLMNet models
+        "TMLE(GLMNet)" => TMLEE(glmnet_η̂s, weighted=false,),
+        "Weighted-TMLE(GLMNet)" => TMLEE(glmnet_η̂s, weighted=true),
+        "OSE(GLMNet)" => OSE(glmnet_η̂s),
+        "CV-TMLE(GLMNet)" => TMLEE(glmnet_η̂s, weighted=false, resampling=cv),
+        "Weighted-CV-TMLE(GLMNet)" => TMLEE(glmnet_η̂s, weighted=true, resampling=cv),
+        "CV-OSE(GLMNet)" => OSE(glmnet_η̂s, resampling=cv),
+        # GLM models
+        "TMLE(GLM)" => TMLEE(glm_η̂s, weighted=false,),
+        "Weighted-TMLE(GLM)" => TMLEE(glm_η̂s, weighted=true),
+        "OSE(GLM)" => OSE(glm_η̂s),
+        "CV-TMLE(GLM)" => TMLEE(glm_η̂s, weighted=false, resampling=cv),
+        "Weighted-CV-TMLE(GLM)" => TMLEE(glm_η̂s, weighted=true, resampling=cv),
+        "CV-OSE(GLM)" => OSE(glm_η̂s, resampling=cv),
+    )
+    # Estimation
+    cache = Dict()
+    results = []
+    for (Ψ̂name, Ψ̂) ∈ Ψ̂s
+        verbosity > 0 && @info string("Estimating Ψ with: ", Ψ̂name, ".")
+        result, cache = Ψ̂(Ψ, dataset, cache=cache, verbosity=verbosity-1)
+        push!(results, Ψ̂name => result)
+    end
+    # plot_cis
+    fig = plot_confints(results)
+    save(parsed_args["out"], fig)
 end
 
-# plot_cis
 
-plot_confints(results)
+
+
