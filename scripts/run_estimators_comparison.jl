@@ -7,16 +7,14 @@ function parse_commandline()
         add_version = true)
 
     @add_arg_table s begin
-        "dataset"
-            help = "Full dataset"
-            arg_type = String
-        "estimand-list"
-            help = """Summary file output by TarGene containing a list of 
-            estimands that lead to significantly different results."""
-            arg_type = String
-        "id"
+        "--id"
             help = "Estimand index to run the analysis for."
             arg_type = Int
+            default = 1
+        "--config-file"
+            help = "Path to config file"
+            default = "config/config.jl"
+            arg_type = String
         "--out", "-o"
             help = "Verbosity level"
             arg_type = String

@@ -50,11 +50,7 @@ const all_models = Dict(
 
 # Functions
 
-function plot_confints(results)
-    Ψ = first(results)[2].estimand
-    estimates = [TMLE.estimate(result[2]) for result in results]
-    upper_bounds = [confint(TMLE.OneSampleTTest(result[2]))[2] for result in results]
-    nestimators = length(results)
+function plot_confints(Ψ, dataset_results)
     fig = Figure(resolution = (1200, 1000))
     treatment_spec = join(
         (string(treatment, ": ", treatment_values.control, "⟶", treatment_values.case) 
@@ -62,26 +58,31 @@ function plot_confints(results)
         ", "
     )
     title = string(replace(string(typeof(Ψ)), "TMLE.Statistical" => ""), ": ", Ψ.outcome, ", " , treatment_spec)
-    ax = Axis(fig[1, 1], title=title, yticks = (1:nestimators, [x[1] for x ∈ results]))
-    errorbars!(ax, 
-        estimates,
-        1:nestimators, 
-        upper_bounds .- estimates,
-        whiskerwidth = 15,
-        color=1:nestimators,
-        colormap=:seaborn_colorblind,
-        colorrange = (1, nestimators),
-        direction = :x
-    )
-    scatter!(ax, estimates, 1:nestimators, 
-        markersize=15, 
-        color=1:nestimators,
-        colormap=:seaborn_colorblind,
-        colorrange = (1, nestimators)
-    )
+    for (axis_id, (datasetname, results)) in enumerate(dataset_results)
+        estimates = [TMLE.estimate(result[2]) for result in results]
+        upper_bounds = [confint(TMLE.OneSampleTTest(result[2]))[2] for result in results]
+        nestimators = length(results)
+        ax = Axis(fig[1, axis_id], title=datasetname, yticks = (1:nestimators, [x[1] for x ∈ results]))
+        errorbars!(ax, 
+            estimates,
+            1:nestimators, 
+            upper_bounds .- estimates,
+            whiskerwidth = 15,
+            color=1:nestimators,
+            colormap=:seaborn_colorblind,
+            colorrange = (1, nestimators),
+            direction = :x
+        )
+        scatter!(ax, estimates, 1:nestimators, 
+            markersize=15, 
+            color=1:nestimators,
+            colormap=:seaborn_colorblind,
+            colorrange = (1, nestimators)
+        )
+    end
+    Label(fig[0, :], title)
     return fig
 end
-
 
 function estimand_from_results_row(row)
     estimand_type = eval(Symbol(row.PARAMETER_TYPE))
@@ -124,61 +125,65 @@ function coercetypes!(dataset, Ψ)
     end
 end
 
-
 function compare_estimators(parsed_args)
+    include(abspath(parsed_args["config-file"]))
     verbosity = parsed_args["verbosity"]
     # Load Data
-    problematic_estimands = CSV.read(parsed_args["estimand-list"], DataFrame)
-    dataset = DataFrame(Arrow.Table(parsed_args["dataset"]))
+    problematic_estimands = CSV.read(estimands_file, DataFrame)
     # Estimand
     row = problematic_estimands[parsed_args["id"], :]
     Ψ = estimand_from_results_row(row)
-    # Coerce datatypes
-    coercetypes!(dataset, Ψ)
-    # Estimators
-    model_keys = tuple(Ψ.outcome, keys(Ψ.treatment_values)...)
-    glm_η̂s = NamedTuple{model_keys}(
-        [outcome_model(all_models, Ψ.outcome, dataset; flavor=:GLM), (treatment_model(all_models, flavor=:GLM) for _ in 1:length(model_keys) - 1)...]
-    )
-    glmnet_η̂s = NamedTuple{model_keys}(
-        [outcome_model(all_models, Ψ.outcome, dataset; flavor=:GLMNet), (treatment_model(all_models, flavor=:GLMNet) for _ in 1:length(model_keys) - 1)...]
-    )
-    sl_η̂s = NamedTuple{model_keys}(
-        [outcome_model(all_models, Ψ.outcome, dataset; flavor=:SL), (treatment_model(all_models, flavor=:SL) for _ in 1:length(model_keys) - 1)...]
-    )
-    Ψ̂s = (
-        # SL models
-        "TMLE(SL)" => TMLEE(sl_η̂s, weighted=false,),
-        "Weighted-TMLE(SL)" => TMLEE(sl_η̂s, weighted=true),
-        "OSE(SL)" => OSE(sl_η̂s),
-        "CV-TMLE(SL)" => TMLEE(sl_η̂s, weighted=false, resampling=cv),
-        "Weighted-CV-TMLE(SL)" => TMLEE(sl_η̂s, weighted=true, resampling=cv),
-        "CV-OSE(SL)" => OSE(sl_η̂s, resampling=cv),
-        # GLMNet models
-        "TMLE(GLMNet)" => TMLEE(glmnet_η̂s, weighted=false,),
-        "Weighted-TMLE(GLMNet)" => TMLEE(glmnet_η̂s, weighted=true),
-        "OSE(GLMNet)" => OSE(glmnet_η̂s),
-        "CV-TMLE(GLMNet)" => TMLEE(glmnet_η̂s, weighted=false, resampling=cv),
-        "Weighted-CV-TMLE(GLMNet)" => TMLEE(glmnet_η̂s, weighted=true, resampling=cv),
-        "CV-OSE(GLMNet)" => OSE(glmnet_η̂s, resampling=cv),
-        # GLM models
-        "TMLE(GLM)" => TMLEE(glm_η̂s, weighted=false,),
-        "Weighted-TMLE(GLM)" => TMLEE(glm_η̂s, weighted=true),
-        "OSE(GLM)" => OSE(glm_η̂s),
-        "CV-TMLE(GLM)" => TMLEE(glm_η̂s, weighted=false, resampling=cv),
-        "Weighted-CV-TMLE(GLM)" => TMLEE(glm_η̂s, weighted=true, resampling=cv),
-        "CV-OSE(GLM)" => OSE(glm_η̂s, resampling=cv),
-    )
-    # Estimation
-    cache = Dict()
-    results = []
-    for (Ψ̂name, Ψ̂) ∈ Ψ̂s
-        verbosity > 0 && @info string("Estimating Ψ with: ", Ψ̂name, ".")
-        result, cache = Ψ̂(Ψ, dataset, cache=cache, verbosity=verbosity-1)
-        push!(results, Ψ̂name => result)
+    dataset_results = Dict()
+    for (datasetname, datasetfile) in datasets
+        dataset = DataFrame(Arrow.Table(datasetfile))
+        # Coerce datatypes
+        coercetypes!(dataset, Ψ)
+        # Estimators
+        model_keys = tuple(Ψ.outcome, keys(Ψ.treatment_values)...)
+        glm_η̂s = NamedTuple{model_keys}(
+            [outcome_model(all_models, Ψ.outcome, dataset; flavor=:GLM), (treatment_model(all_models, flavor=:GLM) for _ in 1:length(model_keys) - 1)...]
+        )
+        glmnet_η̂s = NamedTuple{model_keys}(
+            [outcome_model(all_models, Ψ.outcome, dataset; flavor=:GLMNet), (treatment_model(all_models, flavor=:GLMNet) for _ in 1:length(model_keys) - 1)...]
+        )
+        sl_η̂s = NamedTuple{model_keys}(
+            [outcome_model(all_models, Ψ.outcome, dataset; flavor=:SL), (treatment_model(all_models, flavor=:SL) for _ in 1:length(model_keys) - 1)...]
+        )
+        Ψ̂s = (
+            # SL models
+            "TMLE(SL)" => TMLEE(sl_η̂s, weighted=false,),
+            "Weighted-TMLE(SL)" => TMLEE(sl_η̂s, weighted=true),
+            "OSE(SL)" => OSE(sl_η̂s),
+            "CV-TMLE(SL)" => TMLEE(sl_η̂s, weighted=false, resampling=cv),
+            "Weighted-CV-TMLE(SL)" => TMLEE(sl_η̂s, weighted=true, resampling=cv),
+            "CV-OSE(SL)" => OSE(sl_η̂s, resampling=cv),
+            # GLMNet models
+            "TMLE(GLMNet)" => TMLEE(glmnet_η̂s, weighted=false,),
+            "Weighted-TMLE(GLMNet)" => TMLEE(glmnet_η̂s, weighted=true),
+            "OSE(GLMNet)" => OSE(glmnet_η̂s),
+            "CV-TMLE(GLMNet)" => TMLEE(glmnet_η̂s, weighted=false, resampling=cv),
+            "Weighted-CV-TMLE(GLMNet)" => TMLEE(glmnet_η̂s, weighted=true, resampling=cv),
+            "CV-OSE(GLMNet)" => OSE(glmnet_η̂s, resampling=cv),
+            # GLM models
+            "TMLE(GLM)" => TMLEE(glm_η̂s, weighted=false,),
+            "Weighted-TMLE(GLM)" => TMLEE(glm_η̂s, weighted=true),
+            "OSE(GLM)" => OSE(glm_η̂s),
+            "CV-TMLE(GLM)" => TMLEE(glm_η̂s, weighted=false, resampling=cv),
+            "Weighted-CV-TMLE(GLM)" => TMLEE(glm_η̂s, weighted=true, resampling=cv),
+            "CV-OSE(GLM)" => OSE(glm_η̂s, resampling=cv),
+        )
+        # Estimation
+        cache = Dict()
+        results = []
+        for (Ψ̂name, Ψ̂) ∈ Ψ̂s
+            verbosity > 0 && @info string("Estimating Ψ with: ", Ψ̂name, ".")
+            result, cache = Ψ̂(Ψ, dataset, cache=cache, verbosity=verbosity-1)
+            push!(results, Ψ̂name => result)
+        end
+        dataset_results[datasetname] = results
     end
     # plot_cis
-    fig = plot_confints(results)
+    fig = plot_confints(Ψ, dataset_results)
     save(parsed_args["out"], fig)
 end
 
