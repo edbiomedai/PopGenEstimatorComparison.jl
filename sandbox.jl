@@ -33,7 +33,6 @@ datasets = Dict(
 )
 estimands_file = "data/problematic_estimands.csv"
 verbosity = 1
-id = 6
 
 # Load Data
 problematic_estimands = CSV.read(estimands_file, DataFrame)
@@ -41,6 +40,7 @@ all_individuals = Arrow.Table(datasets["All"]) |> DataFrame
 white_individuals = Arrow.Table(datasets["White"]) |> DataFrame
 
 # Estimand
+id = 6
 row = problematic_estimands[id, :]
 Ψ = PopGenEstimatorComparison.estimand_from_results_row(row)
 y_features = vcat(
@@ -49,7 +49,7 @@ y_features = vcat(
     keys(Ψ.treatment_values)...
 )
 
-function make_frequncy_plot(white_individuals, all_individuals, Ψ)
+function make_frequency_plot(white_individuals, all_individuals, Ψ)
     treatments = collect(keys(Ψ.treatment_values))
     all_columns = unique(Iterators.flatten(
         [[Ψ.outcome], 
@@ -122,8 +122,7 @@ function make_frequncy_plot(white_individuals, all_individuals, Ψ)
     elements = [PolyElement(polycolor = colors[i]) for i in 1:2]
     elements = vcat(elements, dots)
     Legend(fig[:, 3], elements, ["White", "All", "Contribute to Ψ"])
-    fig
-
+    return fig
 end
 ##### Next
 
