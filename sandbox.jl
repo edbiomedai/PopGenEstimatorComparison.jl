@@ -159,7 +159,7 @@ glm_glmnet_y_η̂s = NamedTuple{model_keys}(
     ]
 )
 
-models = glm_η̂s = NamedTuple{model_keys}(
+models = NamedTuple{model_keys}(
     [
         PopGenEstimatorComparison.outcome_model(all_models, Ψ.outcome, white_individuals; flavor=:GLM), 
         (PopGenEstimatorComparison.treatment_model(all_models, flavor=:GLM) for _ in 1:length(model_keys) - 1)...
@@ -185,58 +185,15 @@ ose_result_all
 
 models = NamedTuple{model_keys}(
     [
-        PopGenEstimatorComparison.outcome_model(all_models, Ψ.outcome, white_individuals; flavor=:GLM), 
-        (PopGenEstimatorComparison.treatment_model(all_models, flavor=:GLM) for _ in 1:length(model_keys) - 1)...
+        PopGenEstimatorComparison.outcome_model(all_models, Ψ.outcome, all_individuals; flavor=:GLM), 
+        PopGenEstimatorComparison.treatment_model(all_models, flavor=:GLMNet),
+        PopGenEstimatorComparison.treatment_model(all_models, flavor=:GLMNet)
     ]
 )
 tmle = TMLEE(models, weighted=false)
 result_all, cache_all = tmle(Ψ, all_individuals, cache=cache_all, verbosity=verbosity);
 result_all
-η̂ = cache_all[relevant_factors][2]
-Q̂ = η̂.outcome_mean
-Ĝ1, Ĝ2 = η̂.propensity_score
-Q̂loss = mean(log_loss(predict(Q̂, nomissing_dataset), nomissing_dataset[Ψ.outcome]))
-Ĝ1loss = mean(log_loss(predict(Ĝ1, nomissing_dataset), nomissing_dataset[Ĝ1.estimand.outcome]))
-Ĝ2loss = mean(log_loss(predict(Ĝ2, nomissing_dataset), nomissing_dataset[Ĝ2.estimand.outcome]))
-Q̂loss + Ĝ1loss + Ĝ2loss
 
-# Models evaluation
-relevant_factors = TMLE.get_relevant_factors(Ψ)
-models = [all_models[:GLM_CATEGORICAL], all_models[:GLMNet_CATEGORICAL], all_models[:SL_CATEGORICAL], ConstantClassifier()]
-
-function evaluate_models(models, relevant_factors, all_individuals)
-    results = []
-    # Outcome models evaluation
-    outcome_factor = relevant_factors.outcome_mean
-    data = dropmissing(all_individuals, vcat(outcome_factor.parents..., outcome_factor.outcome))
-    X = data[!, collect(outcome_factor.parents)]
-    y = data[!, outcome_factor.outcome]
-    outcome_results = []
-    for model in models
-        push!(
-            outcome_results, 
-            evaluate(with_encoder(model), X, y, resampling=StratifiedCV(), measure=log_loss)
-        )
-    end
-    push!(results, outcome_results)
-
-    for ps_factor ∈ relevant_factors.propensity_score
-        data = dropmissing(all_individuals, vcat(ps_factor.parents..., ps_factor.outcome))
-        X = data[!, collect(ps_factor.parents)]
-        y = data[!, ps_factor.outcome]
-        ps_factor_results = []
-        for model in models
-            push!(
-                ps_factor_results, 
-                evaluate(model, X, y, resampling=StratifiedCV(), measure=log_loss)
-            )
-        end
-        push!(results, ps_factor_results)
-    end
-    return results
-end
-
-results = evaluate_models(models, relevant_factors, all_individuals)
 
 
 ### DEBUG
