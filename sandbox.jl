@@ -6,6 +6,7 @@ using Arrow
 using TMLE
 using MLJBase
 import MLJGLMInterface as MLJGLM
+using MLJModels
 
 function groupby_freqs(data, cols)
     counts = DataFrames.combine(groupby(data, cols, skipmissing=true), nrow)
@@ -118,12 +119,23 @@ function make_frequency_plot(white_individuals, all_individuals, Ψ)
     barplot!(ax, stats.x, stats.freq, dodge=stats.group, color=colors[stats.group])
     dots = scatter!(ax, float.(tomark), zeros(size(tomark, 1)), color=:green, marker=:star8, markersize=30)
 
-    # Shared Legend
+    # Shared Legend and title
     elements = [PolyElement(polycolor = colors[i]) for i in 1:2]
     elements = vcat(elements, dots)
     Legend(fig[:, 3], elements, ["White", "All", "Contribute to Ψ"])
+    
+    treatment_spec = join(
+        (string(treatment, ": ", treatment_values.control, "⟶", treatment_values.case) 
+        for (treatment, treatment_values) ∈ zip(keys(Ψ.treatment_values), Ψ.treatment_values)), 
+        ", "
+    )
+    title = string(replace(string(typeof(Ψ)), "TMLE.Statistical" => ""), ": ", Ψ.outcome, ", " , treatment_spec)
+    Label(fig[0, :], title, fontsize = 14)
     return fig
 end
+
+make_frequency_plot(white_individuals, all_individuals, Ψ)
+
 ##### Next
 
 groupby_freqs(white_individuals, ["rs4962406", "rs12785878", "A49 Bacterial infection of unspecified site"])
@@ -139,7 +151,23 @@ glm_η̂s = NamedTuple{model_keys}(
         (PopGenEstimatorComparison.treatment_model(all_models, flavor=:GLM) for _ in 1:length(model_keys) - 1)...
     ]
 )
-tmle = TMLEE(glm_η̂s, weighted=false,)
+
+glm_glmnet_y_η̂s = NamedTuple{model_keys}(
+    [
+        PopGenEstimatorComparison.outcome_model(all_models, Ψ.outcome, white_individuals; flavor=:GLMNet), 
+        (PopGenEstimatorComparison.treatment_model(all_models, flavor=:GLMNet) for _ in 1:length(model_keys) - 1)...
+    ]
+)
+
+models = glm_η̂s = NamedTuple{model_keys}(
+    [
+        PopGenEstimatorComparison.outcome_model(all_models, Ψ.outcome, white_individuals; flavor=:GLM), 
+        (PopGenEstimatorComparison.treatment_model(all_models, flavor=:GLM) for _ in 1:length(model_keys) - 1)...
+    ]
+)
+
+tmle = TMLEE(glm_glmnet_y_η̂s, weighted=false)
+ose = OSE(glm_η̂s)
 
 PopGenEstimatorComparison.coercetypes!(white_individuals, Ψ)
 cache_white = Dict()
@@ -152,5 +180,108 @@ cache_all = Dict()
 PopGenEstimatorComparison.coercetypes!(all_individuals, Ψ)
 result_all, cache_all = tmle(Ψ, all_individuals, cache=cache_all, verbosity=verbosity);
 result_all
-Q_all = cache_all[y_distr][2]
-fitted_params(Q_all.machine).logistic_classifier.coefs
+ose_result_all, cache_all = ose(Ψ, all_individuals, cache=cache_all, verbosity=verbosity);
+ose_result_all
+
+models = NamedTuple{model_keys}(
+    [
+        PopGenEstimatorComparison.outcome_model(all_models, Ψ.outcome, white_individuals; flavor=:GLM), 
+        (PopGenEstimatorComparison.treatment_model(all_models, flavor=:GLM) for _ in 1:length(model_keys) - 1)...
+    ]
+)
+tmle = TMLEE(models, weighted=false)
+result_all, cache_all = tmle(Ψ, all_individuals, cache=cache_all, verbosity=verbosity);
+result_all
+η̂ = cache_all[relevant_factors][2]
+Q̂ = η̂.outcome_mean
+Ĝ1, Ĝ2 = η̂.propensity_score
+Q̂loss = mean(log_loss(predict(Q̂, nomissing_dataset), nomissing_dataset[Ψ.outcome]))
+Ĝ1loss = mean(log_loss(predict(Ĝ1, nomissing_dataset), nomissing_dataset[Ĝ1.estimand.outcome]))
+Ĝ2loss = mean(log_loss(predict(Ĝ2, nomissing_dataset), nomissing_dataset[Ĝ2.estimand.outcome]))
+Q̂loss + Ĝ1loss + Ĝ2loss
+
+# Models evaluation
+relevant_factors = TMLE.get_relevant_factors(Ψ)
+models = [all_models[:GLM_CATEGORICAL], all_models[:GLMNet_CATEGORICAL], all_models[:SL_CATEGORICAL], ConstantClassifier()]
+
+function evaluate_models(models, relevant_factors, all_individuals)
+    results = []
+    # Outcome models evaluation
+    outcome_factor = relevant_factors.outcome_mean
+    data = dropmissing(all_individuals, vcat(outcome_factor.parents..., outcome_factor.outcome))
+    X = data[!, collect(outcome_factor.parents)]
+    y = data[!, outcome_factor.outcome]
+    outcome_results = []
+    for model in models
+        push!(
+            outcome_results, 
+            evaluate(with_encoder(model), X, y, resampling=StratifiedCV(), measure=log_loss)
+        )
+    end
+    push!(results, outcome_results)
+
+    for ps_factor ∈ relevant_factors.propensity_score
+        data = dropmissing(all_individuals, vcat(ps_factor.parents..., ps_factor.outcome))
+        X = data[!, collect(ps_factor.parents)]
+        y = data[!, ps_factor.outcome]
+        ps_factor_results = []
+        for model in models
+            push!(
+                ps_factor_results, 
+                evaluate(model, X, y, resampling=StratifiedCV(), measure=log_loss)
+            )
+        end
+        push!(results, ps_factor_results)
+    end
+    return results
+end
+
+results = evaluate_models(models, relevant_factors, all_individuals)
+
+
+### DEBUG
+cache = Dict()
+dataset = all_individuals
+TMLE.check_treatment_levels(Ψ, dataset)
+# Initial fit of the SCM's relevant factors
+verbosity >= 1 && @info "Fitting the required equations..."
+relevant_factors = TMLE.get_relevant_factors(Ψ)
+nomissing_dataset = TMLE.nomissing(dataset, TMLE.variables(relevant_factors))
+initial_factors_dataset = TMLE.choose_initial_dataset(dataset, nomissing_dataset, tmle.resampling)
+initial_factors_estimator = TMLE.CMRelevantFactorsEstimator(tmle.resampling, tmle.models)
+initial_factors_estimate = initial_factors_estimator(relevant_factors, initial_factors_dataset; cache=cache, verbosity=verbosity)
+# Get propensity score truncation threshold
+n = MLJBase.nrows(nomissing_dataset)
+ps_lowerbound = TMLE.ps_lower_bound(n, tmle.ps_lowerbound)
+# Fluctuation initial factors unweighted
+verbosity >= 1 && @info "Performing TMLE..."
+targeted_factors_estimator = TMLE.TargetedCMRelevantFactorsEstimator(
+    Ψ, 
+    initial_factors_estimate; 
+    tol=tmle.tol, 
+    ps_lowerbound=tmle.ps_lowerbound, 
+    weighted=false
+)
+targeted_factors_estimate = targeted_factors_estimator(relevant_factors, nomissing_dataset; cache=cache, verbosity=verbosity)
+IC, Ψ̂ = TMLE.gradient_and_estimate(Ψ, targeted_factors_estimate, nomissing_dataset; ps_lowerbound=ps_lowerbound)
+
+# Fluctuation initial factors weighted
+verbosity >= 1 && @info "Performing TMLE..."
+targeted_factors_estimator_weighted = TMLE.TargetedCMRelevantFactorsEstimator(
+    Ψ, 
+    initial_factors_estimate; 
+    tol=tmle.tol, 
+    ps_lowerbound=tmle.ps_lowerbound, 
+    weighted=true
+)
+targeted_factors_estimate_weighted = targeted_factors_estimator_weighted(relevant_factors, nomissing_dataset; cache=cache, verbosity=verbosity)
+IC_w, Ψ̂w = TMLE.gradient_and_estimate(Ψ, targeted_factors_estimate_weighted, nomissing_dataset; ps_lowerbound=ps_lowerbound)
+Qstar_w = targeted_factors_estimate_weighted.outcome_mean.machine
+fp_w = fitted_params(fitted_params(Qstar_w).fitresult.one_dimensional_path)
+
+# Estimation results after TMLE/OSE
+IC_i, Ψ̂_i = TMLE.gradient_and_estimate(Ψ, initial_factors_estimate, nomissing_dataset; ps_lowerbound=ps_lowerbound)
+verbosity >= 1 && @info "Done."
+# update!(cache, relevant_factors, targeted_factors_estimate)
+Qstar = targeted_factors_estimate.outcome_mean.machine
+fp = fitted_params(fitted_params(Qstar).fitresult.one_dimensional_path)

@@ -19,7 +19,7 @@ export GLMNetClassifier, GLMNetRegressor
 export GLMEstimator
 export compare_estimators
 
-include("estimators.jl")
+# include("estimators.jl")
 include("glmnet.jl")
 include("comparison.jl")
 
