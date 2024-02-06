@@ -1,5 +1,12 @@
 *.jl.*.cov
 *.jl.cov
 *.jl.mem
+.nextflow/
+.nextflow*
 /docs/Manifest.toml
 /docs/build/
+results/
+work/
+trace*
+report*
+temp/

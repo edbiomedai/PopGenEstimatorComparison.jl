@@ -9,3 +9,5 @@ stages:
             - /exports/igmm/eddie/UK-BioBank-53116/phenotypes/encoding.ukb
             - /exports/igmm/eddie/UK-BioBank-53116/imputed/ukb_53116_chr1.bgen
             - /exports/igmm/eddie/UK-BioBank-53116/genotypes/ukb_53116_chr1.bed
+        outs:
+            - results/dataset.arrow
