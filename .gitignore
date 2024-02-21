@@ -10,3 +10,4 @@ work/
 trace*
 report*
 temp/
+sandbox.jl
