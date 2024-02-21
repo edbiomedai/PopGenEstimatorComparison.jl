@@ -1,28 +1,12 @@
 module PopGenEstimatorComparison
 
-using MLJ
-using MLJBase
-using GLMNet
-using CSV
-using DataFrames
-using CairoMakie
-using Arrow
-using PopGenEstimatorComparison
-using MLJLinearModels
-using TMLE
-using PopGenEstimatorComparison
-using MLJXGBoostInterface
-using MLJModels
-import MLJGLMInterface as MLJGLM
+using Distributions
+using LinearAlgebra
+using Random
 
-export GLMNetClassifier, GLMNetRegressor
-export GLMEstimator
-export compare_estimators
+include("generative_models.jl")
 
-# include("estimators.jl")
-include("glmnet.jl")
-include("comparison.jl")
-
-export all_models
+export RandomDatasetGenerator
+export sample
 
 end

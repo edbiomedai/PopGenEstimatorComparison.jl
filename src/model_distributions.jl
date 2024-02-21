@@ -63,7 +63,7 @@ function get_model_distributions(Ψ, dataset; verbosity=0)
         G1, G2 = cache_all[:last_fluctuation].propensity_score
         g1 = MLJ.predict(G1.machine)
         g2 = MLJ.predict(G2.machine)
-        push!(results, model_comb => (initial=ŷinit, targeted=ŷstar, tmle=result_all, g1=g1, g2=g2))
+        push!(results, model_comb => (initial=ŷinit, targeted=ŷstar, tmle=result_all, g1=g1, g2=g2, qstar=Qstar))
     end
     return results
 end
@@ -147,63 +147,69 @@ id = 6
 row = problematic_estimands[id, :]
 Ψ = PopGenEstimatorComparison.estimand_from_results_row(row)
 
-# Models comparison
+# Models distribution comparison
 PopGenEstimatorComparison.coercetypes!(dataset, Ψ)
 dataset = dropmissing(dataset, vcat(keys(Ψ.treatment_values)..., Ψ.outcome, Ψ.outcome_extra_covariates...))
-
 results = get_model_distributions(Ψ, dataset; verbosity=0)
 plot_model_distributions(results)
 
+# Plot Q⋆ output
+reldistance_threshold = 0.01
+ystar_glmnets = TMLE.expected_value(results[1][2].targeted)
+ystar_mix = TMLE.expected_value(results[3][2].targeted)
 fig = Figure()
-ax = Axis(fig[1, 1],
-    xlabel="All GLMnets")
-xs = TMLE.expected_value(results[1][2].targeted)
-for res in results[3:3]
-    scatter!(ax, 
-        xs, 
-        TMLE.expected_value(res[2].targeted),
-        label=res[1]
-    )
-end
-ablines!(ax, 0, 1, label="Identity")
-axislegend()
+ax = Axis(fig[1, 1], title="Q⋆ predictions", xlabel="GLMNets", ylabel="GLMNet/GLM/GLMNets")
+scatter!(ax, ystar_glmnets, ystar_mix, label="All")
+ablines!(ax, 0, 1, color=:green)
+outliers_ids = [index for (index, (y1, y2)) in enumerate(zip(ystar_glmnets, ystar_mix)) if abs(y1 - y2)/y2 > reldistance_threshold]
+scatter!(ax, ystar_glmnets[outliers_ids], ystar_mix[outliers_ids], color=:red, label="Outliers (τ=$reldistance_threshold)")
+axislegend(ax)
 fig
 
-outliers = DataFrame(
-    baseline = TMLE.expected_value(results[1][2].targeted),
-    problem  = TMLE.expected_value(results[3][2].targeted)
-)
-outliers.reldiff = 100abs.(outliers.baseline .- outliers.problem) ./ outliers.baseline
+dataset_no_outliers = dataset[Not(outliers_ids), :]
+results_no_outliers = get_model_distributions(Ψ, dataset_no_outliers; verbosity=0)
+plot_model_distributions(results_no_outliers)
 
-reldif_threshold = 100
-outlier_indices = findall(outliers.reldiff .> reldif_threshold)
+qstar_glmnets = results_no_outliers[1][2].qstar
+qstar_mix = results_no_outliers[3][2].qstar
 
+## Covariate analysis
+
+outlier_indices = []
 dataset_no_outliers = dataset[Not(outlier_indices), :]
 
 cache = Dict()
 tmle = TMLEE(model_combinations[1][2], weighted=false)
 result_glmnets, cache = tmle(Ψ, dataset_no_outliers, cache=cache, verbosity=1);
 result_glmnets
-Qstar = cache[:last_fluctuation].outcome_mean
-ŷstar_glmnets = MLJ.predict(Qstar.machine)
+Qstar_glmnets = cache[:last_fluctuation].outcome_mean
+ŷstar_glmnets = MLJ.predict(Qstar_glmnets.machine)
 
 tmle = TMLEE(model_combinations[3][2], weighted=false)
 result_mix, cache = tmle(Ψ, dataset_no_outliers, cache=cache, verbosity=1);
 result_mix
-Qstar = cache[:last_fluctuation].outcome_mean
-ŷstar_mix = MLJ.predict(Qstar.machine)
+Qstar_mix = cache[:last_fluctuation].outcome_mean
+ŷstar_mix = MLJ.predict(Qstar_mix.machine)
 
 fig = Figure()
 ax = Axis(fig[1, 1],
-    title = "Removed outliers: $reldif_threshold",
+    title = "Clever covariate comparison",
     xlabel = "GLMnets",
-    ylabel = "Mix"
+    ylabel = "GLMnet/GLM/GLMNet"
 )
-
 scatter!(ax, 
-    TMLE.expected_value(ŷstar_glmnets), 
-    TMLE.expected_value(ŷstar_mix)
+    Qstar_glmnets.machine.fitresult.one_dimensional_path.data[1].covariate, 
+    Qstar_mix.machine.fitresult.one_dimensional_path.data[1].covariate
 )
 ablines!(ax, 0, 1, label="Identity")
 axislegend()
 fig
+
+covariate_outliers = DataFrame(
+    baseline = Qstar_glmnets.machine.fitresult.one_dimensional_path.data[1].covariate, 
+    problem = Qstar_mix.machine.fitresult.one_dimensional_path.data[1].covariate
+)
+covariate_outliers.reldiff = abs.(covariate_outliers.baseline .- covariate_outliers.problem)
+outlier_indices = findall(covariate_outliers.reldiff .> 5)
+
+covariate_outliers[outlier_indices, :]

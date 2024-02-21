@@ -59,16 +59,19 @@ row = problematic_estimands[id, :]
 # Models evaluation
 PopGenEstimatorComparison.coercetypes!(all_individuals, Ψ)
 relevant_factors = TMLE.get_relevant_factors(Ψ)
-models = [all_models[:GLM_CATEGORICAL], all_models[:GLMNet_CATEGORICAL], ConstantClassifier()]
+models = [all_models[:GLM_CATEGORICAL], all_models[:GLMNet_CATEGORICAL]]
 
-nfolds = 3
+nfolds = 10
+nmodels = length(models)
 results = evaluate_models(models, relevant_factors, all_individuals; nfolds=nfolds, acceleration=CPUThreads())
 
 fig = Figure()
 for (factor_index, factor_results) in enumerate(results)
-    ax = Axis(fig[factor_index, 1], xticks=(1:nfolds, [string(typeof(models[i])) for i in 1:nfolds]))
+    ax = Axis(fig[factor_index, 1], aspect = AxisAspect(2), xticks=(1:nmodels, [string(Base.typename(typeof(models[i])).name) for i in 1:nmodels]))
     losses = [factor_result.measurement[1] for factor_result in factor_results]
     stdes = [1.96*sqrt(var(factor_results[1].per_fold[1])/nfolds) for factor_result in factor_results]
-    errorbars!(ax, 1:nfolds, losses, stdes)
+    errorbars!(ax, 1:nmodels, losses, stdes,
+        color = range(0, 1, length = nmodels),
+        whiskerwidth = 10)
 end
-save("test.png", fig)
+fig

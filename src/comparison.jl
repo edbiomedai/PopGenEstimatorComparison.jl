@@ -50,6 +50,17 @@ const all_models = Dict(
 
 # Functions
 
+function run_multiple_estimators(Ψ, dataset, Ψ̂s; verbosity=1)
+    cache = Dict()
+    results = []
+    for (Ψ̂name, Ψ̂) ∈ Ψ̂s
+        verbosity > 0 && @info string("Estimating Ψ with: ", Ψ̂name, ".")
+        result, cache = Ψ̂(Ψ, dataset, cache=cache, verbosity=verbosity-1)
+        push!(results, Ψ̂name => result)
+    end
+    return results
+end
+
 function plot_confints(Ψ, dataset_results)
     fig = Figure(resolution = (1200, 1000))
     treatment_spec = join(
@@ -149,28 +160,30 @@ function compare_estimators(parsed_args)
         sl_η̂s = NamedTuple{model_keys}(
             [outcome_model(all_models, Ψ.outcome, dataset; flavor=:SL), (treatment_model(all_models, flavor=:SL) for _ in 1:length(model_keys) - 1)...]
         )
+        ps_lowerbound = 1e-8
+        resampling = stratified_cv
         Ψ̂s = (
             # SL models
-            "TMLE(SL)" => TMLEE(sl_η̂s, weighted=false,),
-            "Weighted-TMLE(SL)" => TMLEE(sl_η̂s, weighted=true),
-            "OSE(SL)" => OSE(sl_η̂s),
-            "CV-TMLE(SL)" => TMLEE(sl_η̂s, weighted=false, resampling=cv),
-            "Weighted-CV-TMLE(SL)" => TMLEE(sl_η̂s, weighted=true, resampling=cv),
-            "CV-OSE(SL)" => OSE(sl_η̂s, resampling=cv),
+            "TMLE(SL)" => TMLEE(sl_η̂s, weighted=false, ps_lowerbound=ps_lowerbound),
+            "Weighted-TMLE(SL)" => TMLEE(sl_η̂s, weighted=true, ps_lowerbound=ps_lowerbound),
+            "OSE(SL)" => OSE(sl_η̂s, ps_lowerbound=ps_lowerbound),
+            "CV-TMLE(SL)" => TMLEE(sl_η̂s, weighted=false, resampling=resampling, ps_lowerbound=ps_lowerbound),
+            "Weighted-CV-TMLE(SL)" => TMLEE(sl_η̂s, weighted=true, resampling=resampling, ps_lowerbound=ps_lowerbound),
+            "CV-OSE(SL)" => OSE(sl_η̂s, resampling=resampling, ps_lowerbound=ps_lowerbound),
             # GLMNet models
-            "TMLE(GLMNet)" => TMLEE(glmnet_η̂s, weighted=false,),
-            "Weighted-TMLE(GLMNet)" => TMLEE(glmnet_η̂s, weighted=true),
-            "OSE(GLMNet)" => OSE(glmnet_η̂s),
-            "CV-TMLE(GLMNet)" => TMLEE(glmnet_η̂s, weighted=false, resampling=cv),
-            "Weighted-CV-TMLE(GLMNet)" => TMLEE(glmnet_η̂s, weighted=true, resampling=cv),
-            "CV-OSE(GLMNet)" => OSE(glmnet_η̂s, resampling=cv),
+            "TMLE(GLMNet)" => TMLEE(glmnet_η̂s, weighted=false, ps_lowerbound=ps_lowerbound),
+            "Weighted-TMLE(GLMNet)" => TMLEE(glmnet_η̂s, weighted=true, ps_lowerbound=ps_lowerbound),
+            "OSE(GLMNet)" => OSE(glmnet_η̂s, ps_lowerbound=ps_lowerbound),
+            "CV-TMLE(GLMNet)" => TMLEE(glmnet_η̂s, weighted=false, resampling=resampling, ps_lowerbound=ps_lowerbound),
+            "Weighted-CV-TMLE(GLMNet)" => TMLEE(glmnet_η̂s, weighted=true, resampling=resampling, ps_lowerbound=ps_lowerbound),
+            "CV-OSE(GLMNet)" => OSE(glmnet_η̂s, resampling=resampling, ps_lowerbound=ps_lowerbound),
             # GLM models
-            "TMLE(GLM)" => TMLEE(glm_η̂s, weighted=false,),
-            "Weighted-TMLE(GLM)" => TMLEE(glm_η̂s, weighted=true),
-            "OSE(GLM)" => OSE(glm_η̂s),
-            "CV-TMLE(GLM)" => TMLEE(glm_η̂s, weighted=false, resampling=cv),
-            "Weighted-CV-TMLE(GLM)" => TMLEE(glm_η̂s, weighted=true, resampling=cv),
-            "CV-OSE(GLM)" => OSE(glm_η̂s, resampling=cv),
+            "TMLE(GLM)" => TMLEE(glm_η̂s, weighted=false, ps_lowerbound=ps_lowerbound),
+            "Weighted-TMLE(GLM)" => TMLEE(glm_η̂s, weighted=true, ps_lowerbound=ps_lowerbound),
+            "OSE(GLM)" => OSE(glm_η̂s, ps_lowerbound=ps_lowerbound),
+            "CV-TMLE(GLM)" => TMLEE(glm_η̂s, weighted=false, resampling=resampling, ps_lowerbound=ps_lowerbound),
+            "Weighted-CV-TMLE(GLM)" => TMLEE(glm_η̂s, weighted=true, resampling=resampling, ps_lowerbound=ps_lowerbound),
+            "CV-OSE(GLM)" => OSE(glm_η̂s, resampling=resampling, ps_lowerbound=ps_lowerbound),
         )
         # Estimation
         cache = Dict()
@@ -186,7 +199,5 @@ function compare_estimators(parsed_args)
     fig = plot_confints(Ψ, dataset_results)
     save(parsed_args["out"], fig)
 end
-
-
 
 
