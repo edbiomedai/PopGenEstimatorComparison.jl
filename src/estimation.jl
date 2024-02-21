@@ -1,4 +1,4 @@
-function estimate_from_simulated_dataset(generator, n::Int, estimators, estimands;
+function estimate_from_simulated_dataset(generator, n::Int, config, estimators;
     hdf5_output="output.hdf5",
     verbosity=1, 
     rng=Random.default_rng(), 
@@ -7,8 +7,8 @@ function estimate_from_simulated_dataset(generator, n::Int, estimators, estimand
     outputs = TargetedEstimation.Outputs(hdf5=TargetedEstimation.HDF5Output(filename=hdf5_output))
     dataset = sample(generator, n; rng=rng)
     runner = Runner(dataset;
-        estimands=estimands, 
-        estimators=estimators, 
+        estimands_config=config, 
+        estimators_spec=estimators, 
         verbosity=verbosity, 
         outputs=outputs, 
         chunksize=chunksize,
