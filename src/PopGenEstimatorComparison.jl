@@ -7,15 +7,30 @@ using TargetedEstimation
 using DataFrames
 using Flux
 using MLJBase
-using StableRNGs
 using TMLE
+using OneHotArrays
+using MLJModels
+using CategoricalArrays
+using StatsBase
+using JLD2
+using Tables
 
-include("generative_models.jl")
-include("estimation.jl")
+include("utils.jl")
 
-export RandomDatasetGenerator
-export MixtureDensityNetwork, MixtureDensityNetworkEstimator
-export sample, train!
+include(joinpath("density_estimation", "glm.jl"))
+include(joinpath("density_estimation", "neural_net.jl"))
+include(joinpath("density_estimation", "model_selection.jl"))
+
+include(joinpath("samplers", "permutation_null_sampler.jl"))
+include(joinpath("samplers", "density_estimation_sampler.jl"))
+
+# include("estimation.jl")
+
+export PermutationNullSampler, DensityEstimationSampler
+export MixtureDensityNetwork, CategoricalMLP
+export NeuralNetworkEstimator
+export sample_from, train!
 export estimate_from_simulated_dataset
+export evaluate_and_save_density_estimators!
 
 end

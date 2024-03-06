@@ -5,6 +5,7 @@ using PopGenEstimatorComparison
 using TMLE
 using Random
 using JLD2
+using Distributions
 
 @testset "Test estimate_from_simulated_dataset" begin
     generator = RandomDatasetGenerator(treatments_distribution=Bernoulli(), outcome_distribution=Normal())
