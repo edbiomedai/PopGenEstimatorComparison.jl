@@ -6,29 +6,44 @@ using TMLE
 using Random
 using JLD2
 using Distributions
+using LogExpFunctions
+using DataFrames
+using TOML
+
+TESTDIR = pkgdir(PopGenEstimatorComparison, "test")
+
+include(joinpath(TESTDIR, "testutils.jl"))
 
 @testset "Test estimate_from_simulated_dataset" begin
-    generator = RandomDatasetGenerator(treatments_distribution=Bernoulli(), outcome_distribution=Normal())
-    config = TMLE.Configuration(
-        estimands=[ATE(
-            outcome=:Y,
-            treatment_values = (T_1 = (case=1, control=0),),
-            treatment_confounders = (:W_1, :W_2, :W_3, :W_4, :W_5, :W_6)
-            )]
+    origin_dataset = linear_interaction_dataset(100)
+    estimands_config = linear_interaction_dataset_ATEs()
+    sample_size = 100
+    rng_seed = 0
+    nrepeats = 2
+    estimators = (TMLE=TMLEE(), OSE=OSE())
+    outdir1 = mktempdir()
+    permutation_sampling_estimation(origin_dataset, estimands_config, estimators, sample_size;
+        nrepeats=nrepeats,
+        outdir=outdir1,    
+        verbosity=0,
+        rng_seed=rng_seed
     )
-    n = 100
-    estimators = (TMLE=TMLEE(), )
-    estimate_from_simulated_dataset(generator, n, config, estimators;
-        hdf5_output="output.hdf5",
-        verbosity=0, 
-        rng=MersenneTwister(123), 
-        chunksize=100
+    outdir2 = mktempdir()
+    sample_size = 200
+    rng_seed = 1
+    permutation_sampling_estimation(origin_dataset, estimands_config, estimators, sample_size;
+        nrepeats=nrepeats,
+        outdir=outdir2,    
+        verbosity=0,
+        rng_seed = rng_seed
     )
-    jldopen("output.hdf5") do io
-        results = io["Batch_1"]
-        @test results[1].TMLE isa TMLE.TMLEstimate
-    end
-    rm("output.hdf5")
+
+    results = read_results_dirs(outdir1, outdir2)
+    @test names(results) == ["TMLE", "OSE", "REPEAT_ID", "SAMPLE_SIZE", "RNG_SEED"]
+    @test size(results, 1) == 2*2*2
+    @test results.RNG_SEED == [0, 0, 0, 0, 1, 1, 1, 1]
+    @test results.REPEAT_ID == [1, 1, 2, 2, 1, 1, 2, 2]
+    @test results.SAMPLE_SIZE == [100, 100, 100, 100, 200, 200, 200, 200]
 end
 
 end

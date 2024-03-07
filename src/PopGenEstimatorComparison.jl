@@ -14,6 +14,7 @@ using CategoricalArrays
 using StatsBase
 using JLD2
 using Tables
+using TOML
 
 include("utils.jl")
 
@@ -24,13 +25,13 @@ include(joinpath("density_estimation", "model_selection.jl"))
 include(joinpath("samplers", "permutation_null_sampler.jl"))
 include(joinpath("samplers", "density_estimation_sampler.jl"))
 
-# include("estimation.jl")
+include("estimation.jl")
 
 export PermutationNullSampler, DensityEstimationSampler
 export MixtureDensityNetwork, CategoricalMLP
 export NeuralNetworkEstimator
 export sample_from, train!
 export estimate_from_simulated_dataset
-export evaluate_and_save_density_estimators!
-
+export permutation_sampling_estimation
+export read_results_dirs, read_results_dir
 end

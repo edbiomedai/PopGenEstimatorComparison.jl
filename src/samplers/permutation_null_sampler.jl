@@ -1,3 +1,12 @@
+function confounders_and_covariates_set(Ψ)
+    confounders_and_covariates = Set{Symbol}([])
+    push!(
+        confounders_and_covariates, 
+        Iterators.flatten(Ψ.treatment_confounders)..., 
+        Ψ.outcome_extra_covariates...
+    )
+    return confounders_and_covariates
+end
 """
 The Permutation-Null-Sampler keeps the marginal distributions of each variable in the original dataset
 intact while disrupting the causal relationships between them. This is done by:
@@ -6,7 +15,19 @@ intact while disrupting the causal relationships between them. This is done by:
     3. Permuting Y
 """
 struct PermutationNullSampler
-    variables::NamedTuple{(:outcome, :treatments, :confounders, :outcome_extra_covariates)}
+    confounders_and_covariates
+    other_variables
+    function PermutationNullSampler(estimands)
+        # Check confounders and covariates are the same for all estimands
+        confounders_and_covariates = confounders_and_covariates_set(first(estimands))
+        other_variables = Set{Symbol}([])
+        for (index, Ψ) in enumerate(estimands)
+            @assert confounders_and_covariates_set(Ψ) == confounders_and_covariates "All estimands should share the same confounders and covariates."
+            push!(other_variables, Ψ.outcome)
+            push!(other_variables, keys(Ψ.treatment_values)...)
+        end
+        return new(confounders_and_covariates, other_variables)
+    end
 end
 
 function PermutationNullSampler(outcome, treatments; 
@@ -17,13 +38,10 @@ function PermutationNullSampler(outcome, treatments;
     return PermutationNullSampler(variables)
 end
 
-
 function sample_from(sampler::PermutationNullSampler, origin_dataset; n=100)
-    variables = sampler.variables
-    sampled_dataset = sample_from(origin_dataset, confounders_and_covariates(variables); n=n)
-    for treatment in variables.treatments
-        sampled_dataset[!, treatment] = StatsBase.sample(origin_dataset[!, treatment], n, replace=true)
+    sampled_dataset = sample_from(origin_dataset, collect(sampler.confounders_and_covariates); n=n)
+    for variable in sampler.other_variables
+        sampled_dataset[!, variable] = StatsBase.sample(origin_dataset[!, variable], n, replace=true)
     end
-    sampled_dataset[!, variables.outcome] = StatsBase.sample(origin_dataset[!, variables.outcome], n, replace=true)
     return sampled_dataset
 end

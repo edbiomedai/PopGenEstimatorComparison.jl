@@ -51,3 +51,9 @@ function net_train_validation_split(resampling, X, y)
 
     return (X_train, y_train, X_val, y_val)
 end
+
+function read_results_file(file)
+    jldopen(file) do io
+        return reduce(vcat, (io[key] for key in keys(io)))
+    end
+end
