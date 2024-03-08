@@ -1,42 +1,24 @@
-repeat_filename(outdir, repeat) = joinpath(outdir, string("output_", repeat, ".hdf5"))
-info_filename(outdir) = joinpath(outdir, "info.toml")
-
-function read_results_dir(outdir)
-    infofile = info_filename(outdir)
-    infodict = TOML.parsefile(joinpath(outdir, "info.toml"))
-    sample_size = infodict["sample_size"]
-    rng_seed = infodict["rng_seed"]
-    results = []
-    for filename in filter(!=(infofile), readdir(outdir, join=true))
-        repeat_id = parse(Int, split(replace(filename, ".hdf5" => ""), "_")[end])
-        fileresults = read_results_file(joinpath(outdir, filename))
-        fileresults = [merge(result, (REPEAT_ID=repeat_id, SAMPLE_SIZE=sample_size,RNG_SEED=rng_seed)) for result in fileresults]
-        append!(results, fileresults)
-    end
-    
-    return DataFrame(results)
-end
-
-read_results_dirs(outdirs...) = reduce(vcat, read_results_dir(outdir) for outdir in outdirs)
-
-function permutation_sampling_estimation(origin_dataset, estimands_config, estimators, sample_size;
+function permutation_sampling_estimation(origin_dataset, estimands_config, estimators_config, sample_size;
     nrepeats=10,
-    outdir="outputs",
-    verbosity=1, 
+    out="output.arrow",
+    verbosity=1,
     rng_seed=0, 
     chunksize=100
     )
     rng = Random.default_rng()
     Random.seed!(rng, rng_seed)
-    sampler = PermutationNullSampler(estimands_config.estimands)
-    isdir(outdir) || mkdir(outdir)
+    outdir = mktempdir()
+    origin_dataset = TargetedEstimation.instantiate_dataset(origin_dataset)
+    estimands = TargetedEstimation.instantiate_estimands(estimands_config, origin_dataset)
+    estimators_spec = TargetedEstimation.instantiate_estimators(estimators_config)
+    sampler = PermutationNullSampler(estimands)
     for repeat_id in 1:nrepeats
         outfilename = repeat_filename(outdir, repeat_id)
         outputs = TargetedEstimation.Outputs(hdf5=TargetedEstimation.HDF5Output(filename=outfilename))
         sampled_dataset = sample_from(sampler, origin_dataset; n=sample_size)
         runner = Runner(sampled_dataset;
             estimands_config=estimands_config, 
-            estimators_spec=estimators, 
+            estimators_spec=estimators_spec, 
             verbosity=verbosity, 
             outputs=outputs, 
             chunksize=chunksize,
@@ -45,10 +27,10 @@ function permutation_sampling_estimation(origin_dataset, estimands_config, estim
         )
         runner()
     end
-    open(joinpath(outdir, "info.toml"), "w") do io
-        TOML.print(io, Dict(
-            "sample_size" => sample_size,
-            "rng_seed" => rng_seed
-        ))
-    end
+
+    results = read_results_dir(outdir)
+    results.SAMPLE_SIZE .= sample_size
+    results.RNG_SEED .= rng_seed
+
+    jldsave(out, results=results)
 end

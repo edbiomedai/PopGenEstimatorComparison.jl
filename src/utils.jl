@@ -57,3 +57,29 @@ function read_results_file(file)
         return reduce(vcat, (io[key] for key in keys(io)))
     end
 end
+
+repeat_filename(outdir, repeat) = joinpath(outdir, string("output_", repeat, ".hdf5"))
+
+function read_results_dir(outdir)
+    results = []
+    for filename in readdir(outdir, join=true)
+        repeat_id = parse(Int, split(replace(filename, ".hdf5" => ""), "_")[end])
+        fileresults = read_results_file(joinpath(outdir, filename))
+        fileresults = [merge(result, (REPEAT_ID=repeat_id,)) for result in fileresults]
+        append!(results, fileresults)
+    end
+    
+    return DataFrame(results)
+end
+
+read_df_result(file) = jldopen(io -> io["results"], file)
+
+read_df_results(outfiles...) = reduce(vcat, read_df_result(f) for f in outfiles)
+
+function save_aggregated_df_results(input_prefix, out)
+    dir = dirname(input_prefix)
+    dir = dir !== "" ? dir : "."
+    baseprefix = basename(input_prefix)
+    results = reduce(vcat, read_df_result(joinpath(dir, file)) for file in readdir(dir) if startswith(file, baseprefix))
+    jldsave(out, results=results)
+end
