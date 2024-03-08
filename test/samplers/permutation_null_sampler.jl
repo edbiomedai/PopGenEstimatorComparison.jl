@@ -10,7 +10,7 @@ using Distributions
 using TMLE
 using LogExpFunctions
 
-TESTDIR = pkgdir(PopGenEstimatorComparison, "test")
+TESTDIR = joinpath(pkgdir(PopGenEstimatorComparison), "test")
 
 include(joinpath(TESTDIR, "testutils.jl"))
 @testset "Test PermutationNullSampler" begin

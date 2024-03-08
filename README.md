@@ -23,4 +23,4 @@ There is no environment file at the moment, please install:
 
 - Julia >= 1.10
 - Nextflow >= 23.10.0
-- Singularity >= 3.8.6
+- Singularity >= 3.8.6 (Optional)

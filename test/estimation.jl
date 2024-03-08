@@ -10,7 +10,9 @@ using LogExpFunctions
 using DataFrames
 using JLD2
 
-TESTDIR = pkgdir(PopGenEstimatorComparison, "test")
+PKGDIR = pkgdir(PopGenEstimatorComparison)
+
+TESTDIR = joinpath(PKGDIR, "test")
 
 include(joinpath(TESTDIR, "testutils.jl"))
 
@@ -20,9 +22,9 @@ include(joinpath(TESTDIR, "testutils.jl"))
     out1 = joinpath(outdir, "permutation_results_1.hdf5")
     copy!(ARGS, [
         "permutation-estimation",
-        joinpath("test", "assets", "dataset.arrow"),
-        joinpath("test", "assets", "estimands", "ates.jls"),
-        "assets/estimators-configs/glm.jl",
+        joinpath(TESTDIR, "assets", "dataset.arrow"),
+        joinpath(TESTDIR, "assets", "estimands", "ates.jls"),
+        joinpath(PKGDIR, "assets", "estimators-configs", "glm.jl"),
         "--sample-size=100",
         "--n-repeats=2",
         "--rng=0",
@@ -33,9 +35,9 @@ include(joinpath(TESTDIR, "testutils.jl"))
     out2 = joinpath(outdir, "permutation_results_2.hdf5")
     copy!(ARGS, [
         "permutation-estimation",
-        joinpath("test", "assets", "dataset.arrow"),
-        joinpath("test", "assets", "estimands", "ates.jls"),
-        "assets/estimators-configs/glm.jl",
+        joinpath(TESTDIR, "assets", "dataset.arrow"),
+        joinpath(TESTDIR, "assets", "estimands", "ates.jls"),
+        joinpath(PKGDIR, "assets", "estimators-configs", "glm.jl"),
         "--sample-size=200",
         "--n-repeats=2",
         "--rng=1",
