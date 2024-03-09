@@ -1,7 +1,6 @@
 module PopGenEstimatorComparison
 
 using Distributions
-using LinearAlgebra
 using Random
 using TargetedEstimation
 using DataFrames
