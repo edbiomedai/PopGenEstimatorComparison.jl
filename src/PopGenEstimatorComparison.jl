@@ -10,6 +10,8 @@ using MLJBase
 using TMLE
 using OneHotArrays
 using MLJModels
+using MLJLinearModels
+using MLJGLMInterface
 using CategoricalArrays
 using StatsBase
 using JLD2
@@ -33,6 +35,7 @@ include("cli.jl")
 export PermutationNullSampler, DensityEstimationSampler
 export MixtureDensityNetwork, CategoricalMLP
 export NeuralNetworkEstimator
+export GLMEstimator
 export sample_from, train!
 export estimate_from_simulated_dataset
 export permutation_sampling_estimation
