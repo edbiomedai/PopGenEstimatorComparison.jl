@@ -1,11 +1,30 @@
 module TestUtils
 
+using PopGenEstimatorComparison
 using PopGenEstimatorComparison: get_input_size, getlabels,
-    train_validation_split, net_train_validation_split
+    train_validation_split, net_train_validation_split,
+    get_outcome, confounders_and_covariates_set, get_treatments
 using Test
 using CategoricalArrays
 using DataFrames
 using MLJBase
+using TMLE
+
+TESTDIR = joinpath(pkgdir(PopGenEstimatorComparison), "test")
+
+include(joinpath(TESTDIR, "testutils.jl"))
+
+@testset "Test estimandss variables accessors" begin
+    Ψ, composedΨ = linear_interaction_dataset_ATEs().estimands
+
+    @test confounders_and_covariates_set(Ψ) == Set([:W, :C])
+    @test get_outcome(Ψ) == :Ycont
+    @test get_treatments(Ψ) == (:T₁,)
+
+    @test confounders_and_covariates_set(composedΨ) == Set([:W, :C])
+    @test get_outcome(composedΨ) == :Ybin
+    @test get_treatments(composedΨ) == (:T₁, :T₂)
+end
 
 @testset "Test misc" begin
     # Test get_input_size

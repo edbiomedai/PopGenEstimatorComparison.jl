@@ -42,6 +42,23 @@ function linear_interaction_dataset(n=100)
 end
 
 function linear_interaction_dataset_ATEs()
+    composedATE = ComposedEstimand(
+        TMLE.joint_estimand,
+        (
+            ATE(
+                outcome=:Ybin,
+                treatment_values = (T₁ = (case=1, control=0), T₂ = (case=1, control=0)),
+                treatment_confounders = (:W,),
+                outcome_extra_covariates = (:C,)
+            ),
+            ATE(
+                outcome=:Ybin,
+                treatment_values = (T₁ = (case=0, control=1), T₂ = (case=0, control=1)),
+                treatment_confounders = (:W,),
+                outcome_extra_covariates = (:C,)
+            )
+        )
+    )
     return TMLE.Configuration(
         estimands = [
         ATE(
@@ -50,12 +67,7 @@ function linear_interaction_dataset_ATEs()
             treatment_confounders = (:W,),
             outcome_extra_covariates = (:C,)
         ),
-        ATE(
-            outcome=:Ybin,
-            treatment_values = (T₁ = (case=1, control=0), T₂ = (case=1, control=0)),
-            treatment_confounders = (:W,),
-            outcome_extra_covariates = (:C,)
-        )
+        composedATE
     ])
 end
 

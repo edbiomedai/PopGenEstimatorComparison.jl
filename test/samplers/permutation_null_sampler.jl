@@ -13,6 +13,7 @@ using LogExpFunctions
 TESTDIR = joinpath(pkgdir(PopGenEstimatorComparison), "test")
 
 include(joinpath(TESTDIR, "testutils.jl"))
+
 @testset "Test PermutationNullSampler" begin
     rng = Random.default_rng()
     Random.seed!(rng, 0)

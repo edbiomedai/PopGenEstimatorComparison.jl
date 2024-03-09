@@ -1,12 +1,3 @@
-function confounders_and_covariates_set(Ψ)
-    confounders_and_covariates = Set{Symbol}([])
-    push!(
-        confounders_and_covariates, 
-        Iterators.flatten(Ψ.treatment_confounders)..., 
-        Ψ.outcome_extra_covariates...
-    )
-    return confounders_and_covariates
-end
 """
 The Permutation-Null-Sampler keeps the marginal distributions of each variable in the original dataset
 intact while disrupting the causal relationships between them. This is done by:
@@ -21,10 +12,10 @@ struct PermutationNullSampler
         # Check confounders and covariates are the same for all estimands
         confounders_and_covariates = confounders_and_covariates_set(first(estimands))
         other_variables = Set{Symbol}([])
-        for (index, Ψ) in enumerate(estimands)
+        for Ψ in estimands
             @assert confounders_and_covariates_set(Ψ) == confounders_and_covariates "All estimands should share the same confounders and covariates."
-            push!(other_variables, Ψ.outcome)
-            push!(other_variables, keys(Ψ.treatment_values)...)
+            push!(other_variables, get_outcome(Ψ))
+            push!(other_variables, get_treatments(Ψ)...)
         end
         return new(confounders_and_covariates, other_variables)
     end

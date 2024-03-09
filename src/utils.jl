@@ -1,3 +1,7 @@
+########################################################################
+###                          Misc Functions                          ###
+########################################################################
+
 getlabels(col::CategoricalVector) = levels(col)
 getlabels(col) = nothing
 
@@ -25,6 +29,10 @@ encode_or_reformat(y::CategoricalVector) = onehotbatch(y, levels(y))
 encode_or_reformat(y::AbstractVector) = reshape(y, 1, length(y))
 encode_or_reformat(X) = vcat((encode_or_reformat(Tables.getcolumn(X, n)) for n in Tables.columnnames(X))...)
 
+########################################################################
+###                    Train / Validation Splits                     ###
+########################################################################
+
 function train_validation_split(resampling, X, y)
     # Get Train/Validation Splits
     train_samples, val_samples = first(MLJBase.train_test_pairs(resampling, 1:length(y), X, y))
@@ -51,6 +59,10 @@ function net_train_validation_split(resampling, X, y)
 
     return (X_train, y_train, X_val, y_val)
 end
+
+########################################################################
+###                    Results Files Manipulation                    ###
+########################################################################
 
 function read_results_file(file)
     jldopen(file) do io
@@ -82,4 +94,39 @@ function save_aggregated_df_results(input_prefix, out)
     baseprefix = basename(input_prefix)
     results = reduce(vcat, read_df_result(joinpath(dir, file)) for file in readdir(dir) if startswith(file, baseprefix))
     jldsave(out, results=results)
+end
+
+########################################################################
+###                    Estimand variables accessors                  ###
+########################################################################
+
+function confounders_and_covariates_set(Ψ)
+    confounders_and_covariates = Set{Symbol}([])
+    push!(
+        confounders_and_covariates, 
+        Iterators.flatten(Ψ.treatment_confounders)..., 
+        Ψ.outcome_extra_covariates...
+    )
+    return confounders_and_covariates
+end
+
+confounders_and_covariates_set(Ψ::ComposedEstimand) = 
+    union((confounders_and_covariates_set(arg) for arg in Ψ.args)...)
+
+get_outcome(Ψ) = Ψ.outcome
+
+function get_outcome(Ψ::ComposedEstimand)
+    @assert Ψ.f == TMLE.joint_estimand "Only joint estimands can be processed at the moment."
+    outcome = get_outcome(first(Ψ.args))
+    @assert all(get_outcome(x) == outcome for x in Ψ.args)
+    return outcome
+end
+
+get_treatments(Ψ) = keys(Ψ.treatment_values)
+
+function get_treatments(Ψ::ComposedEstimand) 
+    @assert Ψ.f == TMLE.joint_estimand "Only joint estimands can be processed at the moment."
+    treatments = get_treatments(first(Ψ.args))
+    @assert all(get_treatments(x) == treatments for x in Ψ.args)
+    return treatments
 end
