@@ -18,5 +18,6 @@ COPY . /opt/PopGenDRSim
 
 WORKDIR /opt/PopGenDRSim
 
-# Precompile the project
-RUN julia --project -e'using Pkg; Pkg.instantiate(); Pkg.resolve(); Pkg.precompile()'
+# Precompile and Test project
+RUN julia --project -e'using Pkg; Pkg.instantiate(); Pkg.resolve(); Pkg.precompile(); Pkg.test()'
+
