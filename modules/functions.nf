@@ -5,7 +5,6 @@ def JuliaCmd() {
     else {
         return """
         TEMPD=\$(mktemp -d)
-        JULIA_DEPOT_PATH=\$TEMPD:/opt julia --project=/opt/PopGenDRSim --startup-file=no /opt/PopGenDRSim/popgen.jl
-        """
+        JULIA_DEPOT_PATH=\$TEMPD:/opt julia --project=/opt/PopGenDRSim --startup-file=no /opt/PopGenDRSim/popgen.jl"""
     }
 }
