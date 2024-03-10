@@ -41,10 +41,10 @@ process AggregateResults {
 }
 
 workflow PERMUTATION_NULL_ESTIMATION {
-    origin_dataset = Channel.value(file(params.DATASET))
+    origin_dataset = Channel.value(file(params.DATASET, checkIfExists: true))
 
-    estimators = Channel.fromPath(params.ESTIMATORS)
-    estimands = Channel.fromPath(params.ESTIMANDS)
+    estimators = Channel.fromPath(params.ESTIMATORS, checkIfExists: true)
+    estimands = Channel.fromPath(params.ESTIMANDS, checkIfExists: true)
     sample_sizes = Channel.fromList(params.SAMPLE_SIZES)
     rngs = Channel.fromList(params.RNGS)
     combined = estimators.combine(estimands).combine(sample_sizes).combine(rngs)

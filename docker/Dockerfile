@@ -19,5 +19,7 @@ COPY . /opt/PopGenDRSim
 WORKDIR /opt/PopGenDRSim
 
 # Precompile and Test project
-RUN julia --project -e'using Pkg; Pkg.instantiate(); Pkg.resolve(); Pkg.precompile(); Pkg.test()'
+RUN julia --project -e'using Pkg; Pkg.instantiate(); Pkg.resolve(); Pkg.precompile()'
 
+# Build Sysimage
+RUN julia --project --startup-file=no deps/build_sysimage.jl
