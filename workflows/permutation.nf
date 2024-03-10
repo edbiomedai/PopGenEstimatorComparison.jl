@@ -5,7 +5,7 @@ process PermutationEstimation {
 
     input:
         path origin_dataset 
-        tuple path(estimators), path(estimands), val(sample_size)
+        tuple path(estimators), path(estimands), val(sample_size), val(rng)
         
     output:
         path out
@@ -19,7 +19,7 @@ process PermutationEstimation {
             --out=${out} \
             --verbosity=${params.VERBOSITY} \
             --chunksize=${params.TL_SAVE_EVERY} \
-            --rng=${params.RNG}
+            --rng=${rng}
         """
 }
 
@@ -46,7 +46,8 @@ workflow PERMUTATION_NULL_ESTIMATION {
     estimators = Channel.fromPath(params.ESTIMATORS)
     estimands = Channel.fromPath(params.ESTIMANDS)
     sample_sizes = Channel.fromList(params.SAMPLE_SIZES)
-    combined = estimators.combine(estimands).combine(sample_sizes)
+    rngs = Channel.fromList(params.RNGS)
+    combined = estimators.combine(estimands).combine(sample_sizes).combine(rngs)
 
     permutation_results = PermutationEstimation(origin_dataset, combined)
     AggregateResults(permutation_results.collect())

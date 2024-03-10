@@ -3,6 +3,6 @@ def JuliaCmd() {
         return "julia --project=${projectDir} --startup-file=no ${projectDir}/popgen.jl"
     }
     else {
-        return "Oopsies..."
+        return "julia --project=/opt/PopGenDRSim --startup-file=no /opt/PopGenDRSim/popgen.jl"
     }
 }
