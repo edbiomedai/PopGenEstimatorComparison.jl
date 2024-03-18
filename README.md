@@ -31,4 +31,5 @@ In order to be compatible with the model selection procedure, the density estima
 
 - A constructor taking two inputs (X, y) where X is a table and y a vector such that the returned estimator is compatible with (X, y).
 - A `train!(estimator, X, y; verbosity)` method for fitting, returning the estimator itself.
-- An `evaluate` method returning the metrics (TBD).
+- An `evaluation_metrics(estimator, X, y)` method returning the evaluation metrics as a NamedTuple.
+- A sampling `sample_from()` method

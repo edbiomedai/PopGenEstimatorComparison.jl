@@ -13,14 +13,14 @@ TESTDIR = joinpath(pkgdir(PopGenEstimatorComparison), "test")
 
 include(joinpath(TESTDIR, "testutils.jl"))
 
-@testset "Test MixtureDensityNetwork" begin
+@testset "Test Continuous Outcome MixtureDensityNetwork" begin
     # Seeding
     rng = Random.default_rng()
     Random.seed!(rng, 0)
     dataset = Float32.(sinusoidal_dataset(;n_samples=1000))
     X, y = X_y(dataset, [:x], :y)
 
-    # Test Train reduces both train and validation loss
+    # Training
     estimator = NeuralNetworkEstimator(MixtureDensityNetwork(), max_epochs=10_000)
     X_train, y_train, X_val, y_val = net_train_validation_split(estimator.resampling, X, y)
     training_loss_before_train = compute_loss(estimator.model, X_train, y_train)
@@ -31,7 +31,10 @@ include(joinpath(TESTDIR, "testutils.jl"))
     @test training_loss_before_train > training_loss_after_train
     @test val_loss_before_train > val_loss_after_train
     # Sampling
-    y_new = sample_from(estimator, X)
+    y_sampled = sample_from(estimator, X)
+    @test y_sampled isa Vector
+    # Evaluate
+    evaluation_metrics(estimator, X_val, y_val)
 end
 
 @testset "Test CategoricalMLP" begin

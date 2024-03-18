@@ -13,13 +13,15 @@ process PermutationEstimation {
     script:
         out = "permutation_results__${rng}__${sample_size}__${estimands.getBaseName()}__${estimators.getBaseName()}.hdf5"
         """
+        mkdir workdir
         ${JuliaCmd()} permutation-estimation ${origin_dataset} ${estimands} ${estimators} \
             --sample-size=${sample_size} \
             --n-repeats=${params.N_REPEATS} \
             --out=${out} \
             --verbosity=${params.VERBOSITY} \
             --chunksize=${params.TL_SAVE_EVERY} \
-            --rng=${rng}
+            --rng=${rng} \
+            --workdir=workdir
         """
 }
 

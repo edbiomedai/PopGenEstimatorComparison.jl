@@ -35,7 +35,7 @@ export PermutationNullSampler, DensityEstimationSampler
 export MixtureDensityNetwork, CategoricalMLP
 export NeuralNetworkEstimator
 export GLMEstimator
-export sample_from, train!
+export sample_from, train!, evaluation_metrics
 export estimate_from_simulated_dataset
 export permutation_sampling_estimation
 export read_df_results, read_df_result

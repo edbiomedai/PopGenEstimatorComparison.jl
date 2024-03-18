@@ -62,6 +62,11 @@ function cli_settings()
             arg_type = Int
             help = "Random seed (Only used for estimands ordering at the moment)."
             default = 123
+        
+        "--workdir"
+            arg_type = String
+            help = "Working directory"
+            default = mktempdir()
     end
 
     return s
@@ -82,7 +87,9 @@ function julia_main()::Cint
             out=cmd_settings["out"],
             verbosity=cmd_settings["verbosity"],
             rng_seed=cmd_settings["rng"], 
-            chunksize=cmd_settings["chunksize"])
+            chunksize=cmd_settings["chunksize"],
+            workdir=cmd_settings["workdir"]
+            )
     elseif cmd == "aggregate"
         save_aggregated_df_results(cmd_settings["input-prefix"], cmd_settings["out"])
     end

@@ -3,17 +3,17 @@ function permutation_sampling_estimation(origin_dataset, estimands_config, estim
     out="output.arrow",
     verbosity=1,
     rng_seed=0, 
-    chunksize=100
+    chunksize=100,
+    workdir=mktempdir()
     )
     rng = Random.default_rng()
     Random.seed!(rng, rng_seed)
-    outdir = mktempdir()
     origin_dataset = TargetedEstimation.instantiate_dataset(origin_dataset)
     estimands = TargetedEstimation.instantiate_estimands(estimands_config, origin_dataset)
     estimators_spec = TargetedEstimation.instantiate_estimators(estimators_config)
     sampler = PermutationNullSampler(estimands)
     for repeat_id in 1:nrepeats
-        outfilename = repeat_filename(outdir, repeat_id)
+        outfilename = repeat_filename(workdir, repeat_id)
         outputs = TargetedEstimation.Outputs(hdf5=TargetedEstimation.HDF5Output(filename=outfilename))
         sampled_dataset = sample_from(sampler, origin_dataset; n=sample_size)
         runner = Runner(sampled_dataset;
@@ -28,7 +28,7 @@ function permutation_sampling_estimation(origin_dataset, estimands_config, estim
         runner()
     end
 
-    results = read_results_dir(outdir)
+    results = read_results_dir(workdir)
     results.SAMPLE_SIZE .= sample_size
     results.RNG_SEED .= rng_seed
 

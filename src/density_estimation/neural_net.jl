@@ -91,6 +91,12 @@ end
 sample_from(estimator::NeuralNetworkEstimator, X::DataFrame, labels=nothing) = 
     sample_from(estimator.model, encode_or_reformat(X), labels)
 
+function evaluation_metrics(estimator::NeuralNetworkEstimator, X, y)
+    ŷ = estimator.model(encode_or_reformat(X))
+    encode_or_reformat(ŷ)
+    Flux.crossentropy(model(x), ŷ)
+end
+
 ### Categorical MLP
 
 """

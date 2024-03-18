@@ -13,3 +13,17 @@ function train!(estimator::GLMEstimator, X, y; verbosity=1)
     estimator.machine = mach
     return estimator
 end
+
+"""
+For each row in X, samples a new y
+"""
+function sample_from(estimator::GLMEstimator, X)
+    ŷ = MLJBase.predict(estimator.machine, X)
+    return rand.(ŷ)
+end
+
+function evaluation_metrics(estimator::GLMEstimator, X, y)
+    ŷ = MLJBase.predict(estimator.machine, X)
+    logloss = mean(logpdf.(ŷ, y))
+    return (logloss = logloss,)
+end

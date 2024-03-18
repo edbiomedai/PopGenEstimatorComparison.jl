@@ -19,6 +19,7 @@ include(joinpath(TESTDIR, "testutils.jl"))
 @testset "Test estimate_from_simulated_dataset" begin
     outdir = mktempdir()
     # Run 1
+    workdir1 = mktempdir()
     out1 = joinpath(outdir, "permutation_results_1.hdf5")
     copy!(ARGS, [
         "permutation-estimation",
@@ -28,10 +29,12 @@ include(joinpath(TESTDIR, "testutils.jl"))
         "--sample-size=100",
         "--n-repeats=2",
         "--rng=0",
-        string("--out=", out1)
+        string("--out=", out1),
+        string("--workdir=", workdir1)
     ])
     PopGenEstimatorComparison.julia_main()
     # Run 2
+    workdir2 = mktempdir()
     out2 = joinpath(outdir, "permutation_results_2.hdf5")
     copy!(ARGS, [
         "permutation-estimation",
@@ -41,7 +44,8 @@ include(joinpath(TESTDIR, "testutils.jl"))
         "--sample-size=200",
         "--n-repeats=2",
         "--rng=1",
-        string("--out=", out2)
+        string("--out=", out2),
+        string("--workdir=", workdir2)
     ])
     PopGenEstimatorComparison.julia_main()
     # Aggregate the 2 runs
@@ -50,7 +54,6 @@ include(joinpath(TESTDIR, "testutils.jl"))
         "aggregate",
         joinpath(outdir, "permutation_results"),
         out,
-
     ])
     PopGenEstimatorComparison.julia_main()
 
