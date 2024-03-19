@@ -76,7 +76,7 @@ function read_results_dir(outdir)
     results = []
     for filename in readdir(outdir, join=true)
         repeat_id = parse(Int, split(replace(filename, ".hdf5" => ""), "_")[end])
-        fileresults = read_results_file(joinpath(outdir, filename))
+        fileresults = read_results_file(filename)
         fileresults = [merge(result, (REPEAT_ID=repeat_id,)) for result in fileresults]
         append!(results, fileresults)
     end
