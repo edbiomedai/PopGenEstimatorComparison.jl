@@ -14,7 +14,7 @@ TESTDIR = joinpath(pkgdir(PopGenEstimatorComparison), "test")
 
 include(joinpath(TESTDIR, "testutils.jl"))
 
-@testset "Test estimandss variables accessors" begin
+@testset "Test estimands variables accessors" begin
     Ψ, composedΨ = linear_interaction_dataset_ATEs().estimands
 
     @test confounders_and_covariates_set(Ψ) == Set([:W, :C])
@@ -44,14 +44,13 @@ end
 
 @testset "Test train_validation_split" begin
     X, y = MLJBase.make_blobs()
-    resampling = CV(nfolds=10)
-    X_train, y_train, X_val, y_val = train_validation_split(resampling, X, y)
+    X_train, y_train, X_val, y_val = train_validation_split(X, y)
     @test size(y_train, 1) == 90
     @test size(y_val, 1) == 10
     @test X_train isa NamedTuple
     @test X_val isa NamedTuple
 
-    X_train, y_train, X_val, y_val = net_train_validation_split(resampling, X, y)
+    X_train, y_train, X_val, y_val = net_train_validation_split(X, y)
     @test size(X_train) == (2, 90)
     @test size(X_val) == (2, 10)
     @test size(y_train) == (3, 90)

@@ -3,11 +3,12 @@ module TestNeuralNetEstimation
 using Test
 using PopGenEstimatorComparison
 using PopGenEstimatorComparison: net_train_validation_split, X_y,
-    compute_loss, early_stopping_message
+    compute_loss, early_stopping_message, train_validation_split
 using Random
 using Distributions
 using DataFrames
 using MLJBase
+using CategoricalArrays
 
 TESTDIR = joinpath(pkgdir(PopGenEstimatorComparison), "test")
 
@@ -19,22 +20,20 @@ include(joinpath(TESTDIR, "testutils.jl"))
     Random.seed!(rng, 0)
     dataset = Float32.(sinusoidal_dataset(;n_samples=1000))
     X, y = X_y(dataset, [:x], :y)
+    X_train, y_train, X_val, y_val = train_validation_split(X, y)
 
-    # Training
+    # Training and Evaluation
     estimator = NeuralNetworkEstimator(MixtureDensityNetwork(), max_epochs=10_000)
-    X_train, y_train, X_val, y_val = net_train_validation_split(estimator.resampling, X, y)
-    training_loss_before_train = compute_loss(estimator.model, X_train, y_train)
-    val_loss_before_train = compute_loss(estimator.model, X_val, y_val)
+    training_loss_before_train = evaluation_metrics(estimator, X_train, y_train)
+    val_loss_before_train = evaluation_metrics(estimator, X_val, y_val)
     @test_logs (:info, early_stopping_message(5)) train!(estimator, X, y, verbosity=1)
-    training_loss_after_train = compute_loss(estimator.model, X_train, y_train)
-    val_loss_after_train = compute_loss(estimator.model, X_val, y_val)
+    training_loss_after_train = evaluation_metrics(estimator, X_train, y_train)
+    val_loss_after_train = evaluation_metrics(estimator, X_val, y_val)
     @test training_loss_before_train > training_loss_after_train
     @test val_loss_before_train > val_loss_after_train
     # Sampling
     y_sampled = sample_from(estimator, X)
     @test y_sampled isa Vector
-    # Evaluate
-    evaluation_metrics(estimator, X_val, y_val)
 end
 
 @testset "Test CategoricalMLP" begin
@@ -44,17 +43,20 @@ end
     p = 3
     X, y = MLJBase.make_blobs(n, 3)
     X = Float32.(DataFrame(X))
+    X_train, y_train, X_val, y_val = train_validation_split(X, y)
+    # Training and Evaluation
     estimator = NeuralNetworkEstimator(CategoricalMLP(input_size=3, hidden_sizes=(20, 3)), max_epochs=10_000)
-    X_train, y_train, X_val, y_val = net_train_validation_split(estimator.resampling, X, y)
-    training_loss_before_train = compute_loss(estimator.model, X_train, y_train)
-    val_loss_before_train = compute_loss(estimator.model, X_val, y_val)
+    training_loss_before_train = evaluation_metrics(estimator, X_train, y_train)
+    val_loss_before_train = evaluation_metrics(estimator, X_val, y_val)
     @test_logs (:info, early_stopping_message(5)) train!(estimator, X, y, verbosity=1)
-    training_loss_after_train = compute_loss(estimator.model, X_train, y_train)
-    val_loss_after_train = compute_loss(estimator.model, X_val, y_val)
+    training_loss_after_train = evaluation_metrics(estimator, X_train, y_train)
+    val_loss_after_train = evaluation_metrics(estimator, X_val, y_val)
     @test training_loss_before_train > training_loss_after_train
     @test val_loss_before_train > val_loss_after_train
     # Sample
-    ynew = sample_from(estimator, X, levels(y))
+    y_sampled = sample_from(estimator, X, levels(y))
+    @test y_sampled isa CategoricalArrays.CategoricalVector
+    @test levels(y_sampled) == levels(y)
 end
 
 end

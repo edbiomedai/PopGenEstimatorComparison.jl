@@ -33,7 +33,7 @@ encode_or_reformat(X) = vcat((encode_or_reformat(Tables.getcolumn(X, n)) for n i
 ###                    Train / Validation Splits                     ###
 ########################################################################
 
-function train_validation_split(resampling, X, y)
+function train_validation_split(X, y; train_ratio=10, resampling=JointStratifiedCV(patterns=[r"^rs[0-9]+"], resampling=StratifiedCV(nfolds=train_ratio)))
     # Get Train/Validation Splits
     train_samples, val_samples = first(MLJBase.train_test_pairs(resampling, 1:length(y), X, y))
     # Split Data
@@ -45,7 +45,7 @@ function train_validation_split(resampling, X, y)
     return (X_train, y_train, X_val, y_val)
 end
 
-function net_train_validation_split(resampling, X, y)
+function net_train_validation_split(X, y; train_ratio=10, resampling=JointStratifiedCV(patterns=[r"^rs[0-9]+"], resampling=StratifiedCV(nfolds=train_ratio)))
     # Get Train/Validation Splits
     train_samples, val_samples = first(MLJBase.train_test_pairs(resampling, 1:length(y), X, y))
     # One Hot Encode Categorical variables

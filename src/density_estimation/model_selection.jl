@@ -15,10 +15,9 @@ function evaluate_and_save_density_estimators!(
     train_ratio=10,
     verbosity=1
     )
-    resampling = JointStratifiedCV(patterns=[r"^rs[0-9]+"], resampling=StratifiedCV(nfolds=train_ratio))
     X, y = X_y(dataset, features, outcome)
     density_estimators = get_density_estimators(X, y)
-    X_train, y_train, X_val, y_val = train_validation_split(resampling, X, y)
+    X_train, y_train, X_val, y_val = train_validation_split(X, y; train_ratio=train_ratio)
     metrics = []
     for estimator in density_estimators
         train!(estimator, X_train, y_train, verbosity=verbosity-1)

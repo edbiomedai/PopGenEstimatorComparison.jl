@@ -19,7 +19,7 @@ function train!(estimator, X, y; verbosity=1)
     model = estimator.model
 
     # Dataloaders
-    X_train, y_train, X_val, y_val = net_train_validation_split(estimator.resampling, X, y)
+    X_train, y_train, X_val, y_val = net_train_validation_split(X, y; resampling=estimator.resampling)
     n_train, n_val = length(y_train), length(y_val)
     train_loader = Flux.DataLoader((X_train, y_train), batchsize=estimator.batchsize)
     val_loader = Flux.DataLoader((X_val, y_val), batchsize=estimator.batchsize)
@@ -92,9 +92,7 @@ sample_from(estimator::NeuralNetworkEstimator, X::DataFrame, labels=nothing) =
     sample_from(estimator.model, encode_or_reformat(X), labels)
 
 function evaluation_metrics(estimator::NeuralNetworkEstimator, X, y)
-    ŷ = estimator.model(encode_or_reformat(X))
-    encode_or_reformat(ŷ)
-    Flux.crossentropy(model(x), ŷ)
+    return compute_loss(estimator.model, encode_or_reformat(X), encode_or_reformat(y))
 end
 
 ### Categorical MLP
