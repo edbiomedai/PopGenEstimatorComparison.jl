@@ -92,6 +92,8 @@ function julia_main()::Cint
             )
     elseif cmd == "aggregate"
         save_aggregated_df_results(cmd_settings["input-prefix"], cmd_settings["out"])
+    elseif cmd == "density-estimation"
+        
     end
 
     return 0

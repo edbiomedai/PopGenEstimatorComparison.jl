@@ -26,7 +26,7 @@ variables_from_args(outcome, treatments, confounders, outcome_extra_covariates) 
     )
 
 encode_or_reformat(y::CategoricalVector) = onehotbatch(y, levels(y))
-encode_or_reformat(y::AbstractVector) = reshape(y, 1, length(y))
+encode_or_reformat(y::AbstractVector) = Float32.(reshape(y, 1, length(y)))
 encode_or_reformat(X) = vcat((encode_or_reformat(Tables.getcolumn(X, n)) for n in Tables.columnnames(X))...)
 
 ########################################################################

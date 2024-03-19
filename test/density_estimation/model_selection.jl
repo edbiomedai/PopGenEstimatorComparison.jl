@@ -5,24 +5,33 @@ using PopGenEstimatorComparison
 using Random
 using Distributions
 using DataFrames
+using JLD2
+using Flux
 
 TESTDIR = joinpath(pkgdir(PopGenEstimatorComparison), "test")
 
 include(joinpath(TESTDIR, "testutils.jl"))
 
-@testset "Test evaluate_and_save_density_estimators" begin
-    outpath, _ = mktemp()
+@testset "Test density_estimation" begin
+    # On this dataset, the GLM has no chance to perform best
+    output, _ = mktemp()
     rng = Random.default_rng()
     Random.seed!(rng, 0)
-    dataset = Float32.(sinusoidal_dataset(;n_samples=1000))
-    density_estimators, metrics = evaluate_and_save_density_estimators!(
+    dataset = sinusoidal_dataset(;n_samples=1000)
+    density_estimation(
         dataset, 
         :x, 
         [:y];
-        outpath=outpath,
+        output=output,
         train_ratio=10,
         verbosity=1
     )
+    jldopen(output) do io
+        metrics = io["metrics"]
+        @test length(metrics) == 3
+        best_de = PopGenEstimatorComparison.best_density_estimator(io["estimators"], metrics)
+        @test best_de isa PopGenEstimatorComparison.NeuralNetworkEstimator
+    end
 
 end
 

@@ -8,7 +8,7 @@ GLMEstimator(X, y::CategoricalVector) = GLMEstimator(MLJLinearModels.LogisticCla
 GLMEstimator(X, y) = GLMEstimator(MLJGLMInterface.LinearRegressor()) 
 
 function train!(estimator::GLMEstimator, X, y; verbosity=1)
-    mach = machine(estimator.model, X, y)
+    mach = machine(estimator.model, X, y, cache=false)
     fit!(mach, verbosity=verbosity)
     estimator.machine = mach
     return estimator
@@ -24,6 +24,6 @@ end
 
 function evaluation_metrics(estimator::GLMEstimator, X, y)
     ŷ = MLJBase.predict(estimator.machine, X)
-    logloss = mean(logpdf.(ŷ, y))
+    logloss = -mean(logpdf.(ŷ, y))
     return (logloss = logloss,)
 end

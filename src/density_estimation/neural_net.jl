@@ -7,9 +7,6 @@ maybe_float_32(x) = x
 
 function X_y(dataset, Xcols, ycol)
     outcome_dataset = dropmissing(dataset, Symbol.([Xcols..., ycol]))
-    for colname in names(outcome_dataset)
-        outcome_dataset[!, colname] = maybe_float_32(outcome_dataset[!, colname])
-    end
     X = outcome_dataset[:, collect(Xcols)]
     y = outcome_dataset[:, ycol]
     return X, y
@@ -67,7 +64,7 @@ NeuralNetworkEstimator(model;
     max_epochs = 10,
     ) = NeuralNetworkEstimator(model, optimiser, resampling, batchsize, patience, max_epochs)
 
-NeuralNetworkEstimator(X, y::AbstractVector{<:AbstractFloat}, hidden_sizes; K=3, kwargs...) = 
+NeuralNetworkEstimator(X, y::AbstractVector{<:AbstractFloat}; hidden_sizes=(20,), K=3, kwargs...) = 
     NeuralNetworkEstimator(MixtureDensityNetwork(
             input_size=get_input_size(X), 
             hidden_sizes=hidden_sizes,
@@ -76,7 +73,7 @@ NeuralNetworkEstimator(X, y::AbstractVector{<:AbstractFloat}, hidden_sizes; K=3,
         kwargs...
     )
 
-function NeuralNetworkEstimator(X, y::CategoricalVector, hidden_sizes; K=3, kwargs...)
+function NeuralNetworkEstimator(X, y::CategoricalVector; hidden_sizes=(20,), K=3, kwargs...)
     input_size = get_input_size(X)
     output_size = length(levels(y))
     hidden_sizes = tuple(hidden_sizes..., output_size)
@@ -92,7 +89,7 @@ sample_from(estimator::NeuralNetworkEstimator, X::DataFrame, labels=nothing) =
     sample_from(estimator.model, encode_or_reformat(X), labels)
 
 function evaluation_metrics(estimator::NeuralNetworkEstimator, X, y)
-    return compute_loss(estimator.model, encode_or_reformat(X), encode_or_reformat(y))
+    return (logloss = compute_loss(estimator.model, encode_or_reformat(X), encode_or_reformat(y)), )
 end
 
 ### Categorical MLP

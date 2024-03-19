@@ -24,11 +24,11 @@ include(joinpath(TESTDIR, "testutils.jl"))
 
     # Training and Evaluation
     estimator = NeuralNetworkEstimator(MixtureDensityNetwork(), max_epochs=10_000)
-    training_loss_before_train = evaluation_metrics(estimator, X_train, y_train)
-    val_loss_before_train = evaluation_metrics(estimator, X_val, y_val)
+    training_loss_before_train = evaluation_metrics(estimator, X_train, y_train).logloss
+    val_loss_before_train = evaluation_metrics(estimator, X_val, y_val).logloss
     @test_logs (:info, early_stopping_message(5)) train!(estimator, X, y, verbosity=1)
-    training_loss_after_train = evaluation_metrics(estimator, X_train, y_train)
-    val_loss_after_train = evaluation_metrics(estimator, X_val, y_val)
+    training_loss_after_train = evaluation_metrics(estimator, X_train, y_train).logloss
+    val_loss_after_train = evaluation_metrics(estimator, X_val, y_val).logloss
     @test training_loss_before_train > training_loss_after_train
     @test val_loss_before_train > val_loss_after_train
     # Sampling
@@ -46,11 +46,11 @@ end
     X_train, y_train, X_val, y_val = train_validation_split(X, y)
     # Training and Evaluation
     estimator = NeuralNetworkEstimator(CategoricalMLP(input_size=3, hidden_sizes=(20, 3)), max_epochs=10_000)
-    training_loss_before_train = evaluation_metrics(estimator, X_train, y_train)
-    val_loss_before_train = evaluation_metrics(estimator, X_val, y_val)
+    training_loss_before_train = evaluation_metrics(estimator, X_train, y_train).logloss
+    val_loss_before_train = evaluation_metrics(estimator, X_val, y_val).logloss
     @test_logs (:info, early_stopping_message(5)) train!(estimator, X, y, verbosity=1)
-    training_loss_after_train = evaluation_metrics(estimator, X_train, y_train)
-    val_loss_after_train = evaluation_metrics(estimator, X_val, y_val)
+    training_loss_after_train = evaluation_metrics(estimator, X_train, y_train).logloss
+    val_loss_after_train = evaluation_metrics(estimator, X_val, y_val).logloss
     @test training_loss_before_train > training_loss_after_train
     @test val_loss_before_train > val_loss_after_train
     # Sample
