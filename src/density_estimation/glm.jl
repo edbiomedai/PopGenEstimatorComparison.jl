@@ -1,11 +1,13 @@
 mutable struct GLMEstimator
-    model::Union{MLJLinearModels.LogisticClassifier, MLJGLMInterface.LinearRegressor}
+    model
     machine
     GLMEstimator(model) = new(model)
 end
 
-GLMEstimator(X, y::CategoricalVector) = GLMEstimator(MLJLinearModels.LogisticClassifier()) 
-GLMEstimator(X, y) = GLMEstimator(MLJGLMInterface.LinearRegressor()) 
+GLMEstimator(X, y::CategoricalVector) = 
+    GLMEstimator(OneHotEncoder(drop_last=true) |> MLJLinearModels.LogisticClassifier()) 
+GLMEstimator(X, y) = 
+    GLMEstimator(OneHotEncoder(drop_last=true) |> MLJGLMInterface.LinearRegressor()) 
 
 function train!(estimator::GLMEstimator, X, y; verbosity=1)
     mach = machine(estimator.model, X, y, cache=false)

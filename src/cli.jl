@@ -85,10 +85,40 @@ function cli_settings()
             arg_type = String
             help = "A prefix to serialized TMLE.Configuration (accepted formats: .json | .yaml | .jls)"
 
+        "--output-prefix"
+            arg_type = String
+            default = "conditional_density_variables_"
+            help = "Output JSON file."
+    end
+
+    @add_arg_table! s["density-estimation"] begin
+        "dataset"
+            arg_type = String
+            help = "Path to the dataset (either .csv or .arrow)"
+
+        "density-file"
+            arg_type = String
+            help = "YAML file with an `outcome` field and a `parents` field"
+
+        "--estimators"
+            arg_type = String
+            help = "Julia file containing a `get_density_estimators` function."
+
         "--output"
             arg_type = String
-            default = "conditional_densities_variables.json"
+            default = "conditional_density.hdf5"
             help = "Output JSON file."
+        
+        "--train-ratio"
+            arg_type = Int
+            default = 10
+            help = "The dataset is split using this ratio."
+
+        "--verbosity"
+            arg_type = Int
+            default = 0
+            help = "Verbosity level."
+
     end
 
     return s
@@ -118,10 +148,17 @@ function julia_main()::Cint
         density_estimation_inputs(
             cmd_settings["dataset"],
             cmd_settings["estimands-prefix"];
-            output=cmd_settings["output"]
+            output_prefix=cmd_settings["output-prefix"]
         )
     elseif cmd == "density-estimation"
-        
+        density_estimation(
+            cmd_settings["dataset"],
+            cmd_settings["density-file"];
+            estimators_list=cmd_settings["estimators"],
+            output=cmd_settings["output"],
+            train_ratio=cmd_settings["train-ratio"],
+            verbosity=cmd_settings["verbosity"]
+        )
     end
 
     return 0
