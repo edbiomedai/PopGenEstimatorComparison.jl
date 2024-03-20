@@ -42,7 +42,7 @@ process AggregateResults {
 
 }
 
-workflow PERMUTATION_NULL_ESTIMATION {
+workflow PERMUTATION_ESTIMATION {
     origin_dataset = Channel.value(file(params.DATASET, checkIfExists: true))
 
     estimators = Channel.fromPath(params.ESTIMATORS, checkIfExists: true)

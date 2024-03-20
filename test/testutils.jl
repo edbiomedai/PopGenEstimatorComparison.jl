@@ -90,7 +90,7 @@ function linear_interaction_dataset_IATEs()
 end
 
 function write_linear_interaction_dataset_estimands()
-    serialize("test/assets/estimands/iates.jls", linear_interaction_dataset_IATEs())
-    serialize("test/assets/estimands/ates.jls", linear_interaction_dataset_ATEs())
+    serialize("test/assets/estimands/estimands_iates.jls", linear_interaction_dataset_IATEs())
+    serialize("test/assets/estimands/estimands_ates.jls", linear_interaction_dataset_ATEs())
 end
 

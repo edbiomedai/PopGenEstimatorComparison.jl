@@ -17,6 +17,28 @@ end
 
 best_density_estimator(estimators, metrics) = estimators[findmin(x -> x.test_loss, metrics)[2]]
 
+function density_estimation_inputs(datasetfile, estimands_prefix; output="conditional_densities_variables.json")
+    estimands_dir, _prefix = splitdir(estimands_prefix)
+    _estimands_dir = estimands_dir == "" ? "." : estimands_dir
+
+    estimand_files = map(
+        f -> joinpath(estimands_dir, f),
+        filter(
+            f -> startswith(f, _prefix), 
+            readdir(_estimands_dir)
+        )
+    )
+    dataset = TargetedEstimation.instantiate_dataset(datasetfile)
+    estimands = reduce(
+        vcat,
+        TargetedEstimation.instantiate_estimands(f, dataset) for f in estimand_files
+    )
+    conditional_densities_variables = get_conditional_densities_variables(estimands)
+    open(output, "w") do io
+        JSON.print(io, conditional_densities_variables, 1)
+    end
+end
+
 function density_estimation(
     dataset,
     outcome, 

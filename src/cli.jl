@@ -8,7 +8,14 @@ function cli_settings()
 
         "aggregate"
             action = :command
-            help = "Aggregate multiple results file created by estimation procedures"
+            help = "Aggregate multiple results file created by estimation procedures."
+
+        "density-estimation-inputs"
+            action = :command
+            help = "Generates density estimation inputs."
+        "density-estimation"
+            action = :command
+            help = "Estimate a conditional density."
     end
 
     @add_arg_table! s["aggregate"] begin
@@ -69,6 +76,21 @@ function cli_settings()
             default = mktempdir()
     end
 
+    @add_arg_table! s["density-estimation-inputs"] begin
+        "dataset"
+            arg_type = String
+            help = "Path to the dataset (either .csv or .arrow)"
+
+        "estimands-prefix"
+            arg_type = String
+            help = "A prefix to serialized TMLE.Configuration (accepted formats: .json | .yaml | .jls)"
+
+        "--output"
+            arg_type = String
+            default = "conditional_densities_variables.json"
+            help = "Output JSON file."
+    end
+
     return s
 end
 
@@ -92,6 +114,12 @@ function julia_main()::Cint
             )
     elseif cmd == "aggregate"
         save_aggregated_df_results(cmd_settings["input-prefix"], cmd_settings["out"])
+    elseif cmd == "density-estimation-inputs"
+        density_estimation_inputs(
+            cmd_settings["dataset"],
+            cmd_settings["estimands-prefix"];
+            output=cmd_settings["output"]
+        )
     elseif cmd == "density-estimation"
         
     end

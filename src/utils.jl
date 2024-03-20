@@ -29,6 +29,17 @@ encode_or_reformat(y::CategoricalVector) = onehotbatch(y, levels(y))
 encode_or_reformat(y::AbstractVector) = Float32.(reshape(y, 1, length(y)))
 encode_or_reformat(X) = vcat((encode_or_reformat(Tables.getcolumn(X, n)) for n in Tables.columnnames(X))...)
 
+
+function get_conditional_densities_variables(estimands)
+    conditional_densities_variables = Set{Pair}([])
+    for Ψ in estimands
+        for factor in TMLE.nuisance_functions_iterator(Ψ)
+            push!(conditional_densities_variables, factor.parents => factor.outcome)
+        end
+    end
+    return [Dict("outcome" => pair[2], "parents" => collect(pair[1])) for pair in conditional_densities_variables]
+end
+
 ########################################################################
 ###                    Train / Validation Splits                     ###
 ########################################################################

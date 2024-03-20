@@ -7,8 +7,7 @@ params.TL_SAVE_EVERY = 100
 params.N_REPEATS = 100
 params.RNGS = [0]
 
-include { PERMUTATION_NULL_ESTIMATION } from './workflows/permutation.nf'
+include { PERMUTATION_ESTIMATION } from './workflows/permutation.nf'
+include { DENSITY_ESTIMATION } from './workflows/density_estimation.nf'
 
-workflow {
-    
-}
+workflow {}

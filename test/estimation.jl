@@ -24,7 +24,7 @@ include(joinpath(TESTDIR, "testutils.jl"))
     copy!(ARGS, [
         "permutation-estimation",
         joinpath(TESTDIR, "assets", "dataset.arrow"),
-        joinpath(TESTDIR, "assets", "estimands", "ates.jls"),
+        joinpath(TESTDIR, "assets", "estimands", "estimands_ates.jls"),
         joinpath(PKGDIR, "assets", "estimators-configs", "glm.jl"),
         "--sample-size=100",
         "--n-repeats=2",
@@ -39,7 +39,7 @@ include(joinpath(TESTDIR, "testutils.jl"))
     copy!(ARGS, [
         "permutation-estimation",
         joinpath(TESTDIR, "assets", "dataset.arrow"),
-        joinpath(TESTDIR, "assets", "estimands", "ates.jls"),
+        joinpath(TESTDIR, "assets", "estimands", "estimands_ates.jls"),
         joinpath(PKGDIR, "assets", "estimators-configs", "glm.jl"),
         "--sample-size=200",
         "--n-repeats=2",

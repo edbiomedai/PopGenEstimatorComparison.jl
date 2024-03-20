@@ -7,10 +7,27 @@ using Distributions
 using DataFrames
 using JLD2
 using Flux
+using JSON
 
 TESTDIR = joinpath(pkgdir(PopGenEstimatorComparison), "test")
 
 include(joinpath(TESTDIR, "testutils.jl"))
+
+@testset "Test density_estimation_inputs" begin
+    datasetfile = "test/assets/dataset.arrow"
+    estimands_prefix = joinpath("test", "assets", "estimands", "estimands_")
+    output, _ = mktemp()
+    density_estimation_inputs(datasetfile, estimands_prefix; output=output)
+
+    conditional_densities_variables = JSON.parsefile(output)
+    @test conditional_densities_variables == [
+        Dict{String, Any}("parents" => Any["C", "T₁", "W"], "outcome" => "Ycont"),
+        Dict{String, Any}("parents" => Any["W"], "outcome" => "T₂"),
+        Dict{String, Any}("parents" => Any["C", "T₁", "T₂", "W"], "outcome" => "Ybin"),
+        Dict{String, Any}("parents" => Any["C", "T₁", "T₂", "W"], "outcome" => "Ycont"),
+        Dict{String, Any}("parents" => Any["W"], "outcome" => "T₁")
+    ]
+end
 
 @testset "Test density_estimation" begin
     # On this dataset, the GLM has no chance to perform best
