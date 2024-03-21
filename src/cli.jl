@@ -87,8 +87,12 @@ function cli_settings()
 
         "--output-prefix"
             arg_type = String
-            default = "conditional_density_variables_"
+            default = "de_inputs"
             help = "Output JSON file."
+        "--batchsize"
+            arg_type = Int
+            default = 10
+            help = "Estimands are batched to optimize speed by //"
     end
 
     @add_arg_table! s["density-estimation"] begin
@@ -130,7 +134,7 @@ function julia_main()::Cint
     cmd_settings = settings[cmd]
 
     if cmd == "permutation-estimation"
-        permutation_sampling_estimation(
+        estimate_from_simulated_data(
             cmd_settings["origin-dataset"],
             cmd_settings["estimands-config"],
             cmd_settings["estimators-config"], 
@@ -148,6 +152,7 @@ function julia_main()::Cint
         density_estimation_inputs(
             cmd_settings["dataset"],
             cmd_settings["estimands-prefix"];
+            batchsize=cmd_settings["batchsize"],
             output_prefix=cmd_settings["output-prefix"]
         )
     elseif cmd == "density-estimation"

@@ -1,4 +1,14 @@
-function permutation_sampling_estimation(origin_dataset, estimands_config, estimators_config, sample_size;
+get_sampler(::Nothing, estimands) = PermutationNullSampler(estimands)
+
+get_sampler(prefix::AbstractString, estimands) =
+    DensityEstimationSampler(prefix, estimands)
+
+function estimate_from_simulated_data(
+    origin_dataset, 
+    estimands_config, 
+    estimators_config, 
+    sample_size;
+    sampler_config=nothing,
     nrepeats=10,
     out="output.arrow",
     verbosity=1,
@@ -11,7 +21,7 @@ function permutation_sampling_estimation(origin_dataset, estimands_config, estim
     origin_dataset = TargetedEstimation.instantiate_dataset(origin_dataset)
     estimands = TargetedEstimation.instantiate_estimands(estimands_config, origin_dataset)
     estimators_spec = TargetedEstimation.instantiate_estimators(estimators_config)
-    sampler = PermutationNullSampler(estimands)
+    sampler = get_sampler(sampler_config, estimands)
     for repeat_id in 1:nrepeats
         outfilename = repeat_filename(workdir, repeat_id)
         outputs = TargetedEstimation.Outputs(hdf5=TargetedEstimation.HDF5Output(filename=outfilename))

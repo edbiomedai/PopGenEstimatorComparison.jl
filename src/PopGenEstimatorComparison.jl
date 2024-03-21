@@ -18,6 +18,7 @@ using Tables
 using Arrow
 using ArgParse
 using JSON
+using Serialization
 
 include("utils.jl")
 
@@ -26,20 +27,20 @@ include(joinpath("density_estimation", "neural_net.jl"))
 include(joinpath("density_estimation", "model_selection.jl"))
 
 include(joinpath("samplers", "permutation_null_sampler.jl"))
-# include(joinpath("samplers", "density_estimation_sampler.jl"))
+include(joinpath("samplers", "density_estimate_sampler.jl"))
 
 include("estimation.jl")
 
 include("cli.jl")
 
-export PermutationNullSampler, DensityEstimationSampler
+export PermutationNullSampler, DensityEstimateSampler
 export MixtureDensityNetwork, CategoricalMLP
 export NeuralNetworkEstimator
 export GLMEstimator
 export sample_from, train!, evaluation_metrics
 export density_estimation, density_estimation_inputs
 export estimate_from_simulated_dataset
-export permutation_sampling_estimation
+export estimate_from_simulated_data
 export read_df_results, read_df_result
 export save_aggregated_df_results
 

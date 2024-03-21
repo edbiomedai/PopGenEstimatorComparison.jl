@@ -53,4 +53,6 @@ workflow DENSITY_ESTIMATION {
         de_inputs.conditional_densities.flatten(),
         density_estimators
     )
+
+    EstimationFromDensityEstimates()
 }

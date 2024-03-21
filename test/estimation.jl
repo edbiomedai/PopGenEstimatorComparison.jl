@@ -16,7 +16,7 @@ TESTDIR = joinpath(PKGDIR, "test")
 
 include(joinpath(TESTDIR, "testutils.jl"))
 
-@testset "Test estimate_from_simulated_dataset" begin
+@testset "Test estimate_from_simulated_dataset: permutation_sampler" begin
     outdir = mktempdir()
     # Run 1
     workdir1 = mktempdir()
@@ -64,6 +64,12 @@ include(joinpath(TESTDIR, "testutils.jl"))
     @test results.REPEAT_ID == [1, 1, 2, 2, 1, 1, 2, 2]
     @test results.SAMPLE_SIZE == [100, 100, 100, 100, 200, 200, 200, 200]
 end
+
+
+@testset "Test estimate_from_simulated_dataset: density_estimate_sampler" begin
+    outdir = mktempdir()
+end
+
 
 end
 

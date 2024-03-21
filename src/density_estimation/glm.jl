@@ -24,6 +24,8 @@ function sample_from(estimator::GLMEstimator, X)
     return rand.(ŷ)
 end
 
+sample_from(estimator::GLMEstimator, X, labels) = sample_from(estimator::GLMEstimator, X)
+
 function evaluation_metrics(estimator::GLMEstimator, X, y)
     ŷ = MLJBase.predict(estimator.machine, X)
     logloss = -mean(logpdf.(ŷ, y))
