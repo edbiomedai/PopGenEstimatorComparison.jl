@@ -1,4 +1,4 @@
-module TestPermutationNullSampler
+module TestPermutationSampler
 
 using Test
 using PopGenEstimatorComparison
@@ -14,12 +14,12 @@ TESTDIR = joinpath(pkgdir(PopGenEstimatorComparison), "test")
 
 include(joinpath(TESTDIR, "testutils.jl"))
 
-@testset "Test PermutationNullSampler" begin
+@testset "Test PermutationSampler" begin
     rng = Random.default_rng()
     Random.seed!(rng, 0)
     origin_dataset = linear_interaction_dataset()
     estimands = linear_interaction_dataset_ATEs().estimands
-    sampler = PermutationNullSampler(estimands)
+    sampler = PermutationSampler(estimands)
     @test sampler.confounders_and_covariates == Set([:C, :W])
     @test sampler.other_variables == Set([:Ycont, :Ybin, :T₁, :T₂])
 
@@ -45,7 +45,7 @@ include(joinpath(TESTDIR, "testutils.jl"))
             treatment_confounders = (:W,),
             outcome_extra_covariates = ()
     ))
-    @test_throws AssertionError("All estimands should share the same confounders and covariates.") PermutationNullSampler(estimands)
+    @test_throws AssertionError("All estimands should share the same confounders and covariates.") PermutationSampler(estimands)
 end
 
 end

@@ -33,7 +33,7 @@ include("estimation.jl")
 
 include("cli.jl")
 
-export PermutationNullSampler, DensityEstimateSampler
+export PermutationSampler, DensityEstimateSampler
 export MixtureDensityNetwork, CategoricalMLP
 export NeuralNetworkEstimator
 export GLMEstimator

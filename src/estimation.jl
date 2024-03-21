@@ -1,4 +1,4 @@
-get_sampler(::Nothing, estimands) = PermutationNullSampler(estimands)
+get_sampler(::Nothing, estimands) = PermutationSampler(estimands)
 
 get_sampler(prefix::AbstractString, estimands) =
     DensityEstimationSampler(prefix, estimands)
