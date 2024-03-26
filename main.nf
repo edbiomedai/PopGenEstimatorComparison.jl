@@ -12,4 +12,7 @@ params.DENSITY_ESTIMATORS = "assets/density_estimators.jl"
 include { PERMUTATION_ESTIMATION } from './workflows/permutation.nf'
 include { DENSITY_ESTIMATION } from './workflows/density_estimation.nf'
 
-workflow {}
+workflow {
+    PERMUTATION_ESTIMATION()
+    DENSITY_ESTIMATION()
+}

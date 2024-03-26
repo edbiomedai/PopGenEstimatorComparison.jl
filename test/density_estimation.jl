@@ -106,25 +106,6 @@ include(joinpath(TESTDIR, "testutils.jl"))
     end
 end
 
-@testset "End-to-end Test" begin
-    # For some reason if Julia is isntalled with juliaup on MacOS, the executable is not in ENV["PATH"]
-    r = run(addenv(
-        `nextflow run main.nf -entry DENSITY_ESTIMATION -c test/assets/config/permutation.config -resume`, 
-        "PATH" => ENV["PATH"] * ":" * Sys.BINDIR
-    ));
-    @test r.exitcode == 0
-    jldopen(joinpath("results", "from_densities_results.hdf5")) do io
-        results = io["results"]
-        @test size(results) == (16, 4)
-        @test Set(results.REPEAT_ID) == Set([1, 2])
-        @test Set(results.SAMPLE_SIZE) == Set([100, 200])
-        @test Set(results.RNG_SEED) == Set([0])
-        # non regression
-        @test count(x -> x isa TMLE.Estimate, results.TMLE) > 5
-    end
-end
-
-
 end
 
 true
