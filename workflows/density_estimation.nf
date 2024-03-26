@@ -18,7 +18,7 @@ process DensityEstimationInputs {
         """
         ${JuliaCmd()} density-estimation-inputs ${dataset} ${estimands_prefix} \
             --batchsize=${params.BATCH_SIZE} \
-            --output-prefix=cde_inputs
+            --output-prefix=de_
         """
 }
 
@@ -89,13 +89,13 @@ workflow DENSITY_ESTIMATION {
         de_inputs.conditional_densities.flatten(),
         density_estimators
     )
-
+    
     estimands_by_group = de_inputs.estimands
         .flatten()
-        .map { [it.getName().split("_")[3], it] }
-
+        .map { [it.getName().split("_")[2], it] }
+        
     grouped_density_estimates = density_estimates
-        .map { [it.getName().split("_")[3], it] }
+        .map { [it.getName().split("_")[2], it] }
         .groupTuple()
 
     densities_with_estimand = grouped_density_estimates
@@ -103,7 +103,7 @@ workflow DENSITY_ESTIMATION {
         .map { [it[0][1], it[1][1]] }
 
     combined = estimators.combine(densities_with_estimand).combine(sample_sizes).combine(rngs)
-
+        
     estimates = EstimationFromDensityEstimates(
         dataset,
         combined
