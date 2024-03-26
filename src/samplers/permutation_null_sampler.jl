@@ -30,9 +30,11 @@ function PermutationSampler(outcome, treatments;
 end
 
 function sample_from(sampler::PermutationSampler, origin_dataset; n=100)
+    nrows = nrow(origin_dataset)
     sampled_dataset = sample_from(origin_dataset, collect(sampler.confounders_and_covariates); n=n)
     for variable in sampler.other_variables
-        sampled_dataset[!, variable] = StatsBase.sample(origin_dataset[!, variable], n, replace=true)
+        sample_mask = rand(1:nrows, n)
+        sampled_dataset[!, variable] = origin_dataset[sample_mask, variable]
     end
     return sampled_dataset
 end

@@ -1,4 +1,5 @@
 include { JuliaCmd } from '../modules/functions.nf'
+include { AggregateResults } from '../modules/aggregate.nf'
 
 process PermutationEstimation {
     publishDir "${params.OUTDIR}/permutation_estimation", mode: 'symlink'
@@ -14,7 +15,7 @@ process PermutationEstimation {
         out = "permutation_results__${rng}__${sample_size}__${estimands.getBaseName()}__${estimators.getBaseName()}.hdf5"
         """
         mkdir workdir
-        ${JuliaCmd()} permutation-estimation ${origin_dataset} ${estimands} ${estimators} \
+        ${JuliaCmd()} estimation ${origin_dataset} ${estimands} ${estimators} \
             --sample-size=${sample_size} \
             --n-repeats=${params.N_REPEATS} \
             --out=${out} \
@@ -23,23 +24,6 @@ process PermutationEstimation {
             --rng=${rng} \
             --workdir=workdir
         """
-}
-
-process AggregateResults {
-    publishDir "${params.OUTDIR}", mode: 'symlink'
-
-    input:
-        path results 
-        
-    output:
-        path out
-
-    script:
-        out = "permutation_results.hdf5"
-        """
-        ${JuliaCmd()} aggregate permutation_results ${out}
-        """
-
 }
 
 workflow PERMUTATION_ESTIMATION {
@@ -52,5 +36,5 @@ workflow PERMUTATION_ESTIMATION {
     combined = estimators.combine(estimands).combine(sample_sizes).combine(rngs)
 
     permutation_results = PermutationEstimation(origin_dataset, combined)
-    AggregateResults(permutation_results.collect())
+    AggregateResults(permutation_results.collect(), "permutation_results.hdf5")
 }

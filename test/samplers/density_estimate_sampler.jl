@@ -1,4 +1,4 @@
-module TestDensityEstimationSampler
+module TestDensityEstimateSampler
 
 using Test
 using PopGenEstimatorComparison
@@ -10,7 +10,7 @@ using TMLE
 
 TESTDIR = joinpath(pkgdir(PopGenEstimatorComparison), "test")
 
-@testset "Test DensityEstimationSampler" begin
+@testset "Test DensityEstimateSampler" begin
     density_dir = mktempdir()
     dataset_file = joinpath(TESTDIR, "assets", "dataset.arrow")
     density_file = joinpath(TESTDIR, "assets", "conditional_density_Ybin.json")

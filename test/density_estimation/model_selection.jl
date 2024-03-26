@@ -97,7 +97,7 @@ end
     datasetfile = joinpath(TESTDIR, "assets", "dataset.arrow")
     estimands_prefix = joinpath(TESTDIR, "assets", "estimands", "estimands_")
     outputdir = mktempdir()
-    output_prefix = joinpath(outputdir, "de_inputs")
+    output_prefix = joinpath(outputdir, "de_")
     copy!(ARGS, [
         "density-estimation-inputs",
         datasetfile,
@@ -107,9 +107,9 @@ end
     ])
     PopGenEstimatorComparison.julia_main()
     # group 1
-    estimands = deserialize(joinpath(outputdir, "de_inputs_group_1_batch_1.jls")).estimands
+    estimands = deserialize(joinpath(outputdir, "de_group_1_estimands_1.jls")).estimands
     @test length(estimands) == 3
-    cdes = Set([JSON.parsefile(joinpath(outputdir, "de_inputs_group_1_conditional_density_$i.json")) for i in 1:4])
+    cdes = Set([JSON.parsefile(joinpath(outputdir, "de_group_1_conditional_density_$i.json")) for i in 1:4])
     @test cdes == Set([
         Dict("parents" => ["W"], "outcome" => "T₂"),
         Dict("parents" => ["C", "T₁", "W"], "outcome" => "Ycont"),
@@ -117,14 +117,14 @@ end
         Dict("parents" => ["C", "T₁", "T₂", "W"], "outcome" => "Ybin")
     ])
     # group 2
-    estimands = deserialize(joinpath(outputdir, "de_inputs_group_2_batch_1.jls")).estimands
+    estimands = deserialize(joinpath(outputdir, "de_group_2_estimands_1.jls")).estimands
     @test only(estimands) == IATE(
         outcome=:Ycont, 
         treatment_values=(T₁ = (case = 1, control = 0), T₂ = (case = 1, control = 0)),
         treatment_confounders=(:W,),
         outcome_extra_covariates=(:C,)
     )
-    cdes = Set([JSON.parsefile(joinpath(outputdir, "de_inputs_group_2_conditional_density_$i.json")) for i in 1:3])
+    cdes = Set([JSON.parsefile(joinpath(outputdir, "de_group_2_conditional_density_$i.json")) for i in 1:3])
     @test cdes == Set([
         Dict("parents" => ["W"], "outcome" => "T₂"),
         Dict("parents" => ["W"], "outcome" => "T₁"),
@@ -133,7 +133,7 @@ end
     # With batchsize = 1, only ates hence only one group and 2 batches
     estimands_prefix = joinpath(TESTDIR, "assets", "estimands", "estimands_ates")
     outputdir = mktempdir()
-    output_prefix = joinpath(outputdir, "de_inputs")
+    output_prefix = joinpath(outputdir, "de_")
     copy!(ARGS, [
         "density-estimation-inputs",
         datasetfile,
@@ -142,10 +142,10 @@ end
         string("--batchsize=1")
     ])
     PopGenEstimatorComparison.julia_main()
-    @test length(deserialize(joinpath(outputdir, "de_inputs_group_1_batch_1.jls")).estimands) == 1
-    @test length(deserialize(joinpath(outputdir, "de_inputs_group_1_batch_2.jls")).estimands) == 1
+    @test length(deserialize(joinpath(outputdir, "de_group_1_estimands_1.jls")).estimands) == 1
+    @test length(deserialize(joinpath(outputdir, "de_group_1_estimands_2.jls")).estimands) == 1
 
-    cdes = Set([JSON.parsefile(joinpath(outputdir, "de_inputs_group_1_conditional_density_$i.json")) for i in 1:4])
+    cdes = Set([JSON.parsefile(joinpath(outputdir, "de_group_1_conditional_density_$i.json")) for i in 1:4])
     @test cdes == Set([
         Dict("parents" => ["W"], "outcome" => "T₂"),
         Dict("parents" => ["C", "T₁", "W"], "outcome" => "Ycont"),

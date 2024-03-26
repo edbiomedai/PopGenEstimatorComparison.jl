@@ -2,7 +2,7 @@ function cli_settings()
     s = ArgParseSettings(description="PopGenSim CLI.")
 
     @add_arg_table! s begin
-        "permutation-estimation"
+        "estimation"
             action = :command
             help = "Run Estimation from Permutation Null Sampler."
 
@@ -27,7 +27,7 @@ function cli_settings()
             help = "Output path."
     end
 
-    @add_arg_table! s["permutation-estimation"] begin
+    @add_arg_table! s["estimation"] begin
         "origin-dataset"
             arg_type = String
             help = "Path to the dataset (either .csv or .arrow)"
@@ -40,6 +40,10 @@ function cli_settings()
             arg_type = String
             help = "A julia file containing the estimators to use."
         
+        "--density-estimates-prefix"
+            arg_type = String
+            help = "If specified, a prefix to density estimates, otherwise permutation sampling is perfomed."
+
         "--sample-size"
             arg_type = Int
             help = "Size of simulated dataset."
@@ -133,12 +137,13 @@ function julia_main()::Cint
     cmd = settings["%COMMAND%"]
     cmd_settings = settings[cmd]
 
-    if cmd == "permutation-estimation"
+    if cmd == "estimation"
         estimate_from_simulated_data(
             cmd_settings["origin-dataset"],
             cmd_settings["estimands-config"],
             cmd_settings["estimators-config"], 
             cmd_settings["sample-size"];
+            sampler_config=cmd_settings["density-estimates-prefix"],
             nrepeats=cmd_settings["n-repeats"],
             out=cmd_settings["out"],
             verbosity=cmd_settings["verbosity"],

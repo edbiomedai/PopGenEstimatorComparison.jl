@@ -40,6 +40,31 @@ function get_conditional_densities_variables(estimands)
     return [Dict("outcome" => pair[2], "parents" => collect(pair[1])) for pair in conditional_densities_variables]
 end
 
+function coerce_types!(dataset, colnames)
+    for colname in colnames
+        if autotype(dataset[!, colname]) <: Finite
+            dataset[!, colname] = categorical(dataset[!, colname])
+        else
+            dataset[!, colname] = float(dataset[!, colname])
+        end
+    end
+end
+
+function coerce_types_from_estimands!(dataset, estimands)
+    all_variables = Set([])
+    for Ψ in estimands
+        for variable in  ( 
+            get_outcome(Ψ), 
+            get_treatments(Ψ)...,
+            confounders_and_covariates_set(Ψ)...
+            )
+            push!(all_variables, variable)
+        end
+    end
+
+    coerce_types!(dataset, all_variables)
+end
+
 ########################################################################
 ###                    Train / Validation Splits                     ###
 ########################################################################

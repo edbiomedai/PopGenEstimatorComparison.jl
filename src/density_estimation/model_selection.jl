@@ -22,16 +22,6 @@ function read_density_variables(file)
     return d["outcome"], d["parents"]
 end
 
-function coerce_types!(dataset, colnames)
-    for colname in colnames
-        if autotype(dataset[!, colname]) <: Finite
-            dataset[!, colname] = categorical(dataset[!, colname])
-        else
-            dataset[!, colname] = float(dataset[!, colname])
-        end
-    end
-end
-
 function is_compatible_with_group(conditional_densities, group_conditional_densities)
     for (outcome, parents) in conditional_densities
         if haskey(group_conditional_densities, outcome)
@@ -66,7 +56,7 @@ function make_compatible_estimands_groups(estimands)
     return groups
 end
 
-function density_estimation_inputs(datasetfile, estimands_prefix; batchsize=10, output_prefix="cde_inputs")
+function density_estimation_inputs(datasetfile, estimands_prefix; batchsize=10, output_prefix="de_")
     estimands_dir, _prefix = splitdir(estimands_prefix)
     _estimands_dir = estimands_dir == "" ? "." : estimands_dir
 
@@ -84,10 +74,10 @@ function density_estimation_inputs(datasetfile, estimands_prefix; batchsize=10, 
     )
     estimand_groups = make_compatible_estimands_groups(estimands)
     for (group_index, group) in enumerate(estimand_groups)
-        group_prefix = string(output_prefix, "_group_", group_index)
+        group_prefix = string(output_prefix, "group_", group_index)
         # Write estimands
         for (batch_index, batch) in enumerate(Iterators.partition(group.estimands, batchsize))
-            batch_filename = string(group_prefix, "_batch_", batch_index, ".jls")
+            batch_filename = string(group_prefix, "_estimands_", batch_index, ".jls")
             serialize(batch_filename, TMLE.Configuration(estimands=batch))
         end
         # Write conditional densities

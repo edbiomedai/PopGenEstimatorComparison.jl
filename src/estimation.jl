@@ -1,7 +1,7 @@
 get_sampler(::Nothing, estimands) = PermutationSampler(estimands)
 
 get_sampler(prefix::AbstractString, estimands) =
-    DensityEstimationSampler(prefix, estimands)
+    DensityEstimateSampler(prefix, estimands)
 
 function estimate_from_simulated_data(
     origin_dataset, 
@@ -20,6 +20,7 @@ function estimate_from_simulated_data(
     Random.seed!(rng, rng_seed)
     origin_dataset = TargetedEstimation.instantiate_dataset(origin_dataset)
     estimands = TargetedEstimation.instantiate_estimands(estimands_config, origin_dataset)
+    coerce_types_from_estimands!(origin_dataset, estimands)
     estimators_spec = TargetedEstimation.instantiate_estimators(estimators_config)
     sampler = get_sampler(sampler_config, estimands)
     for repeat_id in 1:nrepeats
