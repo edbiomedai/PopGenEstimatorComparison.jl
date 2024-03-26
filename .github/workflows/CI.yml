@@ -38,7 +38,5 @@ jobs:
       - uses: codecov/codecov-action@v3
         with:
           files: lcov.info
-      - name: Instantiate test environment
-        run: julia --project=test --startup-file=no -e'using Pkg;Pkg.instantiate()'
       - name: Run Workflow test
-        run: julia --project=test --startup-file=no test/workflow_test.jl -resume
+        run: julia --project --startup-file=no test/workflow_test.jl -resume
