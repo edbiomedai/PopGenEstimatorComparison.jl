@@ -2,6 +2,7 @@ include { JuliaCmd } from '../modules/functions.nf'
 include { AggregateResults } from '../modules/aggregate.nf'
 
 process PermutationEstimation {
+    label 'bigmem'
     publishDir "${params.OUTDIR}/permutation_estimation", mode: 'symlink'
 
     input:

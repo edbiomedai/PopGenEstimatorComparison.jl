@@ -23,6 +23,8 @@ process DensityEstimationInputs {
 }
 
 process DensityEstimation {
+    label 'multithreaded'
+    label 'bigmem'
     publishDir "${params.OUTDIR}/density_estimation/density_estimates", mode: 'symlink'
 
     input:
@@ -48,6 +50,7 @@ process DensityEstimation {
 }
 
 process EstimationFromDensityEstimates {
+    label 'bigmem'
     publishDir "${params.OUTDIR}/estimation_from_de", mode: 'symlink'
 
     input:
