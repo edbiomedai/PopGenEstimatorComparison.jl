@@ -1,8 +1,8 @@
 stages:
     make-dataset:
-        cmd: nextflow run https://github.com/TARGENE/targene-pipeline -r 2ca5a9272dc84b606092ffac621b807758cbc112 -entry MAKE_DATASET -profile eddie -resume -with-trace -with-report -N s2042526@ed.ac.uk
+        wdir: dataset
+        cmd: nextflow run https://github.com/TARGENE/targene-pipeline -r v0.10.0 -entry MAKE_DATASET -profile local -resume -with-trace -with-report -N s2042526@ed.ac.uk
         deps:
-            - assets
             - nextflow.config
             - /exports/igmm/eddie/UK-BioBank-53116/imputed/ukb_snp_qc.txt
             - /exports/igmm/eddie/UK-BioBank-53116/phenotypes/ukb45981.enc_ukb
@@ -11,3 +11,20 @@ stages:
             - /exports/igmm/eddie/UK-BioBank-53116/genotypes/ukb_53116_chr1.bed
         outs:
             - results/dataset.arrow
+    make-estimands:
+        cmd: julia --project --startupfile=no scripts/make_estimands_files.jl
+        deps: 
+            - results/dataset.arrow
+            - scripts/make_estimands_files.jl
+        outs:
+            - assets/estimands/rs1421085_ATEs.jls
+    simulation:
+        wdir: simulation
+        cmd: nextflow run ../main.nf -resume -with-trace -with-report -N s2042526@ed.ac.uk
+        deps:
+            - ../dataset/results/dataset.arrow
+            - ../assets/estimands/rs1421085_ATEs.jls
+            - nextflow.config
+        outs:
+            - results/permutation_results.hdf5
+            - results/from_densities_results.hdf5
