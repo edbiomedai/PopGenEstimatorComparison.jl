@@ -18,7 +18,8 @@ include(joinpath(TESTDIR, "testutils.jl"))
     # Seeding
     rng = Random.default_rng()
     Random.seed!(rng, 0)
-    dataset = Float32.(sinusoidal_dataset(;n_samples=1000))
+    n_samples = 1000
+    dataset = Float32.(sinusoidal_dataset(;n_samples=n_samples))
     X, y = X_y(dataset, [:x], :y)
     X_train, y_train, X_val, y_val = train_validation_split(X, y)
 
@@ -34,6 +35,13 @@ include(joinpath(TESTDIR, "testutils.jl"))
     # Sampling
     y_sampled = sample_from(estimator, X)
     @test y_sampled isa Vector
+    # Check the mean is in bounds
+    lb_μy, ub_μy = mean(y) - 1.96std(y), mean(y) + 1.96std(y)
+    @test lb_μy <= mean(y_sampled) <= ub_μy
+    # Check the variance is in bounds
+    Χ² = Chisq(n_samples-1)
+    lb_σy, ub_σy = (n_samples-1)*var(y)/quantile(Χ², 0.975), (n_samples-1)*var(y)/quantile(Χ², 0.025)
+    @test lb_σy <= var(y_sampled) <= ub_σy
 end
 
 @testset "Test CategoricalMLP" begin
@@ -53,8 +61,9 @@ end
     val_loss_after_train = evaluation_metrics(estimator, X_val, y_val).logloss
     @test training_loss_before_train > training_loss_after_train
     @test val_loss_before_train > val_loss_after_train
-    # Sample
+    # Sample, it is perfect here because the problem is too simple
     y_sampled = sample_from(estimator, X, levels(y))
+    @test y_sampled == y
     @test y_sampled isa CategoricalArrays.CategoricalVector
     @test levels(y_sampled) == levels(y)
 end

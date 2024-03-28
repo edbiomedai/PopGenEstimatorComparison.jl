@@ -1,9 +1,5 @@
 
-best_density_estimator(estimators, metrics) = estimators[findmin(x -> x.test_loss, metrics)[2]]
-
-best_density_estimator(file::AbstractString) = jldopen(file) do io
-    best_density_estimator(io["estimators"], io["metrics"])
-end
+best_density_estimator(file::AbstractString) = jldopen(io -> io["best-estimator"], file)
 
 struct DensityEstimateSampler
     sources::Vector

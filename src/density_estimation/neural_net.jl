@@ -22,6 +22,8 @@ function train!(estimator, X, y; verbosity=1)
     val_loader = Flux.DataLoader((X_val, y_val), batchsize=estimator.batchsize)
     
     # Training Loop
+    best_validation_loss = Inf
+    best_model = Flux.state(model)
     local epoch_validation_loss = Inf
     es = Flux.early_stopping(() -> epoch_validation_loss, estimator.patience; init_score = Inf)
     opt_state = Flux.setup(estimator.optimiser, model)
@@ -36,6 +38,10 @@ function train!(estimator, X, y; verbosity=1)
         end
         epoch_training_loss /= n_train
         epoch_validation_loss = sum(length(ybatch)*compute_loss(model, xbatch, ybatch) for (xbatch, ybatch) in val_loader) / n_val
+        if epoch_validation_loss < best_validation_loss
+            best_validation_loss = epoch_validation_loss
+            best_model = Flux.state(model)
+        end
         if verbosity > 1 
             @info string("Epoch: ", epoch, ", Training Loss: ",  epoch_training_loss, ", Validation Loss: ", epoch_validation_loss)
         end
@@ -44,6 +50,7 @@ function train!(estimator, X, y; verbosity=1)
             break
         end
     end
+    Flux.loadmodel!(estimator.model, best_model)
     return 
 end
 
@@ -104,7 +111,7 @@ function hidden_layers(;input_size=1, hidden_sizes=(32,), activation=relu)
     last = Dense(hidden_sizes[end-1], hidden_sizes[end])
     ins = vcat(input_size, hidden_sizes[1:end-2]...)
     outs = collect(hidden_sizes[1:end-1])
-    return Chain((Dense(in, out, activation) for (in, out) in zip(ins, outs))..., last)
+    return Chain((Chain(Dense(in, out, activation), Dropout(0.2)) for (in, out) in zip(ins, outs))..., last)
 end
 
 CategoricalMLP(;input_size=1, hidden_sizes=(32, 2)) =

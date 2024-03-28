@@ -1,5 +1,5 @@
 stages:
-    discovery:
+    make-dataset:
         cmd: nextflow run https://github.com/TARGENE/targene-pipeline -r 2ca5a9272dc84b606092ffac621b807758cbc112 -entry MAKE_DATASET -profile eddie -resume -with-trace -with-report -N s2042526@ed.ac.uk
         deps:
             - assets

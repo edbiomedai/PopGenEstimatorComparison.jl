@@ -42,7 +42,7 @@ end
 
 function coerce_types!(dataset, colnames)
     for colname in colnames
-        if autotype(dataset[!, colname]) <: Finite
+        if autotype(dataset[!, colname]) <: Union{Finite, Missing}
             dataset[!, colname] = categorical(dataset[!, colname])
         else
             dataset[!, colname] = float(dataset[!, colname])

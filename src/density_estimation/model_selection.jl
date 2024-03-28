@@ -112,12 +112,18 @@ function density_estimation(
         test_loss = evaluation_metrics(estimator, X_test, y_test).logloss
         push!(metrics, (train_loss=train_loss, test_loss=test_loss))
     end
+    # Retrain best
+    best_estimator_id = findmin(x -> x.test_loss, metrics)[2]
+    best_estimator = get_density_estimators(estimators_list, X, y)[best_estimator_id]
+    train!(best_estimator, X, y, verbosity=verbosity-1)
+    # Save
     if output !== nothing
         jldopen(output, "w") do io
             io["outcome"] = outcome
             io["parents"] = parents
             io["estimators"] = density_estimators
             io["metrics"] = metrics
+            io["best-estimator"] = best_estimator
         end
     end
     return 0

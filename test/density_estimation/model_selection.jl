@@ -181,12 +181,11 @@ end
     PopGenEstimatorComparison.julia_main()
 
     jldopen(output) do io
+        @test io["best-estimator"] isa NeuralNetworkEstimator
         @test io["outcome"] == "x"
         @test io["parents"] == ["y"]
         metrics = io["metrics"]
         @test length(metrics) == 3
-        best_de = PopGenEstimatorComparison.best_density_estimator(io["estimators"], metrics)
-        @test best_de isa PopGenEstimatorComparison.NeuralNetworkEstimator
     end
 end
 
@@ -213,6 +212,7 @@ end
         metrics = io["metrics"]
         @test length(metrics) == 3
         @test length(io["estimators"]) == 3
+        @test haskey(io, "best-estimator")
     end
 end
 
