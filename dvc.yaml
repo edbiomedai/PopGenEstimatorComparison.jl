@@ -24,7 +24,7 @@ stages:
             - assets/estimands/rs1421085_ATEs.jls
     simulation:
         wdir: simulation
-        cmd: nextflow run ../main.nf -resume -with-trace -with-report -N s2042526@ed.ac.uk
+        cmd: nextflow run ../main.nf -resume -profile eddie -with-trace -with-report -N s2042526@ed.ac.uk
         deps:
             - ../dataset/results/dataset.arrow
             - ../assets/estimands/rs1421085_ATEs.jls

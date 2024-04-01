@@ -58,6 +58,10 @@ stages:
       size: 542735842
   instantiate-project:
     cmd: julia --project --startup-file=no -e'using Pkg; Pkg.instantiate(); Pkg.precompile()'
+    deps:
+    - path: Manifest.toml
+      md5: 81c64122bb71d9721c54f708a32aac4b
+      size: 96379
   make-estimands:
     cmd: julia --project --startup-file=no scripts/make_estimands_files.jl
     deps:
@@ -71,3 +75,23 @@ stages:
     - path: assets/estimands/rs1421085_ATEs.jls
       md5: 62d49ce8a0e228ab3b6fb3592567398a
       size: 2018
+  simulation:
+    cmd: nextflow run ../main.nf -resume -profile eddie -with-trace -with-report -N
+      s2042526@ed.ac.uk
+    deps:
+    - path: ../assets/estimands/rs1421085_ATEs.jls
+      md5: 62d49ce8a0e228ab3b6fb3592567398a
+      size: 2018
+    - path: ../dataset/results/dataset.arrow
+      md5: c78dcb879c2111ecaf9b609be01486dc
+      size: 542735842
+    - path: nextflow.config
+      md5: ee2db088b50097d20f2171dad9a1dbb5
+      size: 306
+    outs:
+    - path: results/from_densities_results.hdf5
+      md5: fe262274ce109fb8cd7690de138e6d27
+      size: 1608255
+    - path: results/permutation_results.hdf5
+      md5: 5887c99e51a77bd50d19051e9b0936f0
+      size: 1608301
