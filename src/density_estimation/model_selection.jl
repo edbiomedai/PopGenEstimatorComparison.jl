@@ -19,7 +19,7 @@ get_density_estimators(::Nothing, X, y) = test_density_estimators(X, y)
 
 function read_density_variables(file)
     d = JSON.parsefile(file)
-    return d["outcome"], d["parents"]
+    return Symbol(d["outcome"]), Symbol.(d["parents"])
 end
 
 function is_compatible_with_group(conditional_densities, group_conditional_densities)
@@ -90,6 +90,8 @@ function density_estimation_inputs(datasetfile, estimands_prefix; batchsize=10, 
     end
 end
 
+MLJBase.serializable(estimators::AbstractVector) = [serializable(estimator) for estimator in estimators]
+
 function density_estimation(
     dataset_file,
     density_file;
@@ -100,7 +102,7 @@ function density_estimation(
     )
     outcome, parents = read_density_variables(density_file)
     dataset = TargetedEstimation.instantiate_dataset(dataset_file)
-    coerce_types!(dataset, [outcome, parents...])
+    TargetedEstimation.coerce_types!(dataset, [outcome, parents...])
 
     X, y = X_y(dataset, parents, outcome)
     density_estimators = get_density_estimators(estimators_list, X, y)
@@ -121,9 +123,9 @@ function density_estimation(
         jldopen(output, "w") do io
             io["outcome"] = outcome
             io["parents"] = parents
-            io["estimators"] = density_estimators
+            io["estimators"] = serializable(density_estimators)
             io["metrics"] = metrics
-            io["best-estimator"] = best_estimator
+            io["best-estimator"] = serializable(best_estimator)
         end
     end
     return 0

@@ -37,7 +37,7 @@ function test_results(out)
     @test results.SAMPLE_SIZE == [100, 100, 100, 100, 200, 200, 200, 200]
 end
 
-@testset "Integration Test" begin
+@testset "Integration Test Permutation Estimation" begin
     outdir = mktempdir()
     dataset_file = joinpath(TESTDIR, "assets", "dataset.arrow")
     # Run 1

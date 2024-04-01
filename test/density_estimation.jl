@@ -24,6 +24,7 @@ using LogExpFunctions
 using DataFrames
 using JLD2
 using JSON
+using MLJBase
 
 PKGDIR = pkgdir(PopGenEstimatorComparison)
 
@@ -31,7 +32,7 @@ TESTDIR = joinpath(PKGDIR, "test")
 
 include(joinpath(TESTDIR, "testutils.jl"))
 
-@testset "Integration Test" begin
+@testset "Integration Test Density Estimation" begin
     dataset_file = joinpath(TESTDIR, "assets", "dataset.arrow")
     estimands_prefix = joinpath(TESTDIR, "assets", "estimands", "estimands_ate")
     # Inputs generation
@@ -66,11 +67,12 @@ include(joinpath(TESTDIR, "testutils.jl"))
                 "--verbosity=0"
             ])
             PopGenEstimatorComparison.julia_main()
-            @test !(PopGenEstimatorComparison.best_density_estimator(outfile) isa Nothing)
+            best_estimator = PopGenEstimatorComparison.best_density_estimator(outfile)
+            @test !(best_estimator isa Nothing)
             density_dict = JSON.parsefile(joinpath(de_inputs_dir, density_file))
             jldopen(outfile) do io
-                @test io["outcome"] == density_dict["outcome"]
-                @test io["parents"] == density_dict["parents"]
+                @test io["outcome"] == Symbol(density_dict["outcome"])
+                @test io["parents"] == Symbol.(density_dict["parents"])
                 @test all(haskey(v, :train_loss) for v in io["metrics"])
                 @test all(haskey(v, :test_loss) for v in io["metrics"])
             end
@@ -94,6 +96,7 @@ include(joinpath(TESTDIR, "testutils.jl"))
         "--chunksize=100",
         string("--workdir=", outdir)
     ])
+
     PopGenEstimatorComparison.julia_main()
 
     jldopen(joinpath(outdir, "results.hdf5")) do io

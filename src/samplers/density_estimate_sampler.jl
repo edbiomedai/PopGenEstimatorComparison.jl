@@ -1,5 +1,5 @@
 
-best_density_estimator(file::AbstractString) = jldopen(io -> io["best-estimator"], file)
+best_density_estimator(file::AbstractString) = jldopen(io -> restore!(io["best-estimator"]), file)
 
 struct DensityEstimateSampler
     sources::Vector
@@ -45,7 +45,7 @@ function sample_from(sampler::DensityEstimateSampler, origin_dataset; n=100)
 
     for density_mapping in (sampler.treatment_density_mapping, sampler.outcome_density_mapping)
         for ((outcome, parents), file) in density_mapping
-            conditional_density_estimate = best_density_estimator(file)
+            conditional_density_estimate = PopGenEstimatorComparison.best_density_estimator(file)
             sampled_dataset[!, outcome] = sample_from(
                 conditional_density_estimate, 
                 sampled_dataset[!, collect(parents)], 

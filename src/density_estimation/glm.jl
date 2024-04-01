@@ -4,10 +4,22 @@ mutable struct GLMEstimator
     GLMEstimator(model) = new(model)
 end
 
+function MLJBase.serializable(estimator::GLMEstimator)
+    new_estimator = GLMEstimator(estimator)
+    new_estimator.machine = serializable(estimator.machine)
+    return new_estimator
+end
+
+function MLJBase.restore!(estimator::GLMEstimator)
+    restore!(estimator.machine)
+    return estimator
+end
+
 GLMEstimator(X, y::CategoricalVector) = 
-    GLMEstimator(OneHotEncoder(drop_last=true) |> MLJLinearModels.LogisticClassifier()) 
+    GLMEstimator(ContinuousEncoder(drop_last=true) |> MLJLinearModels.LogisticClassifier()) 
+
 GLMEstimator(X, y) = 
-    GLMEstimator(OneHotEncoder(drop_last=true) |> MLJGLMInterface.LinearRegressor()) 
+    GLMEstimator(ContinuousEncoder(drop_last=true) |> MLJGLMInterface.LinearRegressor()) 
 
 function train!(estimator::GLMEstimator, X, y; verbosity=1)
     mach = machine(estimator.model, X, y, cache=false)

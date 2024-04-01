@@ -63,6 +63,10 @@ struct NeuralNetworkEstimator
     max_epochs::Int
 end
 
+MLJBase.serializable(estimator::NeuralNetworkEstimator) = estimator
+
+MLJBase.restore!(estimator::NeuralNetworkEstimator) = estimator
+
 NeuralNetworkEstimator(model;
     optimiser = Adam(),
     resampling = Holdout(),

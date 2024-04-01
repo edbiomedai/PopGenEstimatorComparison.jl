@@ -30,3 +30,44 @@ stages:
     - path: results/dataset.arrow
       md5: c78dcb879c2111ecaf9b609be01486dc
       size: 542735842
+  make-dataset:
+    cmd: nextflow run https://github.com/TARGENE/targene-pipeline -r v0.10.0 -entry
+      MAKE_DATASET -profile local -resume -with-trace -with-report -N s2042526@ed.ac.uk
+    deps:
+    - path: /exports/igmm/eddie/UK-BioBank-53116/genotypes/ukb_53116_chr1.bed
+      md5: 21c39fb15932a07f2a622aac804f11fb
+      size: 7751445268
+    - path: /exports/igmm/eddie/UK-BioBank-53116/imputed/ukb_53116_chr1.bgen
+      md5: a927fc2e77171d1df59480d647721bdb
+      size: 194508985673
+    - path: /exports/igmm/eddie/UK-BioBank-53116/imputed/ukb_snp_qc.txt
+      md5: 466d1e77a834defedabfc24cb520d967
+      size: 371289758
+    - path: /exports/igmm/eddie/UK-BioBank-53116/phenotypes/encoding.ukb
+      md5: 46893107a1ee2f6c11c1084614950e21
+      size: 12840633
+    - path: /exports/igmm/eddie/UK-BioBank-53116/phenotypes/ukb45981.enc_ukb
+      md5: eceb71eb8e264dc96326a5b0a4eb5b81
+      size: 16731688880
+    - path: nextflow.config
+      md5: 6062c4fd504dcc78583c2f4426bd4523
+      size: 737
+    outs:
+    - path: results/dataset.arrow
+      md5: c78dcb879c2111ecaf9b609be01486dc
+      size: 542735842
+  instantiate-project:
+    cmd: julia --project --startup-file=no -e'using Pkg; Pkg.instantiate(); Pkg.precompile()'
+  make-estimands:
+    cmd: julia --project --startup-file=no scripts/make_estimands_files.jl
+    deps:
+    - path: results/dataset.arrow
+      md5: c78dcb879c2111ecaf9b609be01486dc
+      size: 542735842
+    - path: scripts/make_estimands_files.jl
+      md5: 8124d324e3cfd5dee029b284f3b95020
+      size: 1447
+    outs:
+    - path: assets/estimands/rs1421085_ATEs.jls
+      md5: 62d49ce8a0e228ab3b6fb3592567398a
+      size: 2018

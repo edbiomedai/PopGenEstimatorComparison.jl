@@ -9,6 +9,7 @@ using CategoricalArrays
 using DataFrames
 using MLJBase
 using TMLE
+using DataFrames
 
 TESTDIR = joinpath(pkgdir(PopGenEstimatorComparison), "test")
 

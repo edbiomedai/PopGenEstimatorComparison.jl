@@ -20,8 +20,8 @@ include(joinpath(TESTDIR, "testutils.jl"))
 @testset "Test misc" begin
     density_file = joinpath(TESTDIR, "assets", "conditional_density_x_y.json")
     outcome, features = PopGenEstimatorComparison.read_density_variables(density_file)
-    @test outcome == "x"
-    @test features == ["y"]
+    @test outcome == :x
+    @test features == [:y]
 
     # Test make_compatible_estimands_groups
     estimands = [
@@ -92,6 +92,7 @@ include(joinpath(TESTDIR, "testutils.jl"))
         :T2 => (:W1,)
     )
 end
+
 @testset "Test density_estimation_inputs" begin
     # With big batchsize
     datasetfile = joinpath(TESTDIR, "assets", "dataset.arrow")
@@ -182,8 +183,8 @@ end
 
     jldopen(output) do io
         @test io["best-estimator"] isa NeuralNetworkEstimator
-        @test io["outcome"] == "x"
-        @test io["parents"] == ["y"]
+        @test io["outcome"] == :x
+        @test io["parents"] == [:y]
         metrics = io["metrics"]
         @test length(metrics) == 3
     end
@@ -207,8 +208,8 @@ end
     PopGenEstimatorComparison.julia_main()
 
     jldopen(output) do io
-        @test io["outcome"] == "Ybin"
-        @test io["parents"] == ["C", "T₁", "W"]
+        @test io["outcome"] == :Ybin
+        @test io["parents"] == [:C, :T₁, :W]
         metrics = io["metrics"]
         @test length(metrics) == 3
         @test length(io["estimators"]) == 3

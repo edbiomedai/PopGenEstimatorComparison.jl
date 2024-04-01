@@ -11,8 +11,12 @@ stages:
             - /exports/igmm/eddie/UK-BioBank-53116/genotypes/ukb_53116_chr1.bed
         outs:
             - results/dataset.arrow
+    instantiate-project:
+        deps: 
+            - Manifest.toml
+        cmd: julia --project --startup-file=no -e'using Pkg; Pkg.instantiate(); Pkg.precompile()'
     make-estimands:
-        cmd: julia --project --startupfile=no scripts/make_estimands_files.jl
+        cmd: julia --project --startup-file=no scripts/make_estimands_files.jl
         deps: 
             - results/dataset.arrow
             - scripts/make_estimands_files.jl
