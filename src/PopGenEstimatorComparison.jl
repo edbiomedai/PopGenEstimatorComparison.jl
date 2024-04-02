@@ -34,6 +34,7 @@ include("estimation.jl")
 include("cli.jl")
 
 export PermutationSampler, DensityEstimateSampler
+export theoretical_true_effect, empirical_true_effect, true_effect
 export MixtureDensityNetwork, CategoricalMLP
 export NeuralNetworkEstimator
 export GLMEstimator
