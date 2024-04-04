@@ -11,10 +11,12 @@ function dummy_dataset(n=100)
     )
 end
 
+sinusoid_function(x) = 7sin.(0.75x) .+ 0.5x
+
 function sinusoidal_dataset(;n_samples=100)
     ϵ = rand(Normal(), n_samples)
     x = rand(Uniform(-10.5, 10.5), n_samples)
-    y = 7sin.(0.75x) .+ 0.5x .+ ϵ
+    y = sinusoid_function(x) .+ ϵ
     return DataFrame(x=x, y=y)
 end
 

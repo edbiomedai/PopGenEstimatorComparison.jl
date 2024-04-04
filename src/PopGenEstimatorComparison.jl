@@ -30,7 +30,7 @@ include(joinpath("samplers", "permutation_null_sampler.jl"))
 include(joinpath("samplers", "density_estimate_sampler.jl"))
 
 include("estimation.jl")
-
+include("analysis.jl")
 include("cli.jl")
 
 export PermutationSampler, DensityEstimateSampler

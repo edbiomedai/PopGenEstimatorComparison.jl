@@ -43,3 +43,5 @@ function evaluation_metrics(estimator::GLMEstimator, X, y)
     logloss = -mean(logpdf.(ŷ, y))
     return (logloss = logloss,)
 end
+
+TMLE.expected_value(estimator::GLMEstimator, X, labels) = TMLE.expected_value(MLJBase.predict(estimator.machine, X))

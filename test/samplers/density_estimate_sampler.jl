@@ -51,6 +51,10 @@ TESTDIR = joinpath(pkgdir(PopGenEstimatorComparison), "test")
 
     @test names(sampled_dataset) == ["W", "C", "T₁", "Ybin"]
     @test size(sampled_dataset, 1) == 100
+
+    # True effects
+    Ψ = estimands[1]
+    effect = true_effect(Ψ, sampler, origin_dataset; n=1000)
 end
 
 end
