@@ -9,6 +9,7 @@ using Distributions
 using DataFrames
 using MLJBase
 using CategoricalArrays
+using TMLE
 
 TESTDIR = joinpath(pkgdir(PopGenEstimatorComparison), "test")
 
@@ -35,6 +36,13 @@ include(joinpath(TESTDIR, "testutils.jl"))
     # Sampling
     y_sampled = sample_from(estimator, X)
     @test y_sampled isa Vector
+    # Expected_value
+    oracle_prediction = sinusoid_function(X.x)
+    network_prediction = TMLE.expected_value(estimator, X, nothing)
+    network_mse = mean((network_prediction .- y).^2)
+    oracle_mse = mean((oracle_prediction .- y).^2)
+    relative_error = 100(network_mse - oracle_mse) / oracle_mse
+    @test relative_error < 3 # less than 3 % difference between oracle and network
     # Check the mean is in bounds
     lb_μy, ub_μy = mean(y) - 1.96std(y), mean(y) + 1.96std(y)
     @test lb_μy <= mean(y_sampled) <= ub_μy
@@ -48,12 +56,12 @@ end
     rng = Random.default_rng()
     Random.seed!(rng, 0)
     n = 1000
-    p = 3
-    X, y = MLJBase.make_blobs(n, 3)
+    X, y = MLJBase.make_circles(n)
+    y = categorical(y, ordered=true)
     X = Float32.(DataFrame(X))
     X_train, y_train, X_val, y_val = train_validation_split(X, y)
     # Training and Evaluation
-    estimator = NeuralNetworkEstimator(CategoricalMLP(input_size=3, hidden_sizes=(20, 3)), max_epochs=10_000)
+    estimator = NeuralNetworkEstimator(CategoricalMLP(input_size=2, hidden_sizes=(20, 2)), max_epochs=10_000)
     training_loss_before_train = evaluation_metrics(estimator, X_train, y_train).logloss
     val_loss_before_train = evaluation_metrics(estimator, X_val, y_val).logloss
     @test_logs (:info, early_stopping_message(5)) train!(estimator, X, y, verbosity=1)
@@ -61,11 +69,16 @@ end
     val_loss_after_train = evaluation_metrics(estimator, X_val, y_val).logloss
     @test training_loss_before_train > training_loss_after_train
     @test val_loss_before_train > val_loss_after_train
-    # Sample, it is perfect here because the problem is too simple
+    # Sample, it is almost perfect here because the problem is too simple
     y_sampled = sample_from(estimator, X, levels(y))
-    @test y_sampled == y
+    @test sum(y_sampled != y) < 5
     @test y_sampled isa CategoricalArrays.CategoricalVector
-    @test levels(y_sampled) == levels(y)
+    labels = levels(y)
+    @test levels(y_sampled) == labels
+    # Expected_value    
+    network_prediction = TMLE.expected_value(estimator, X, labels)
+    # No prediction closer to the incorect label
+    @test sum(abs.(network_prediction .- float(y)) .> 0.5) == 0
 end
 
 end

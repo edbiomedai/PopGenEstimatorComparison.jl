@@ -15,4 +15,5 @@ TESTDIR = joinpath(pkgdir(PopGenEstimatorComparison), "test")
 
     @test include(joinpath(TESTDIR, "permutation_estimation.jl"))
     @test include(joinpath(TESTDIR, "density_estimation.jl"))
+    # @test include(joinpath(TESTDIR, "analysis.jl"))
 end

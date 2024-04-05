@@ -57,3 +57,40 @@ function sample_from(sampler::DensityEstimateSampler, origin_dataset; n=100)
     return sampled_dataset
 end
 
+function counterfactual_aggregate(Ψ, Q, X, labels)
+    Ttemplate = TMLE.selectcols(X, TMLE.treatments(Ψ))
+    n = nrow(Ttemplate)
+    ctf_agg = zeros(n)
+    # Loop over Treatment settings
+    for (vals, sign) in TMLE.indicator_fns(Ψ)
+        # Counterfactual dataset for a given treatment setting
+        T_ct = TMLE.counterfactualTreatment(vals, Ttemplate)
+        X_ct = merge(X, T_ct)
+        # Counterfactual mean
+        ctf_agg .+= sign .* TMLE.expected_value(Q, X_ct, labels)
+    end
+    return ctf_agg
+end
+
+function monte_carlo_effect(Ψ, sampler, dataset)
+    outcome_mean = TMLE.outcome_mean(Ψ)
+    Q = PopGenEstimatorComparison.best_density_estimator(sampler.outcome_density_mapping[outcome_mean.outcome => outcome_mean.parents])
+    X = TMLE.selectcols(dataset, outcome_mean.parents)
+    labels = PopGenEstimatorComparison.getlabels(dataset[!, outcome_mean.outcome])
+    ctf_agg = counterfactual_aggregate(Ψ, Q, X, labels)
+    return mean(ctf_agg)
+end
+
+function true_effect(Ψ, sampler::DensityEstimateSampler, origin_dataset;n=500_000)
+    sampled_dataset = sample_from(sampler, origin_dataset; n=n)
+    return monte_carlo_effect(Ψ, sampler, sampled_dataset)
+end
+
+function true_effect(Ψ::ComposedEstimand, sampler::DensityEstimateSampler, origin_dataset;n=500_000)
+    sampled_dataset = sample_from(sampler, origin_dataset; n=n)
+    effect = zeros(length(Ψ.args))
+    for (index, arg) in enumerate(Ψ.args)
+        effect[index] = monte_carlo_effect(arg, sampler, sampled_dataset)
+    end
+    return effect
+end

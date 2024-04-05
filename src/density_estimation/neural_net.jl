@@ -103,6 +103,8 @@ function evaluation_metrics(estimator::NeuralNetworkEstimator, X, y)
     return (logloss = compute_loss(estimator.model, encode_or_reformat(X), encode_or_reformat(y)), )
 end
 
+TMLE.expected_value(estimator::NeuralNetworkEstimator, X, labels) = vec(TMLE.expected_value(estimator.model, encode_or_reformat(X), labels))
+
 ### Categorical MLP
 
 """
@@ -127,6 +129,11 @@ function sample_from(model::Chain, X, labels)
     ps = softmax(model(X))
     indicators = [rand(Categorical(collect(p))) for p in eachcol(ps)]
     return categorical([labels[i] for i in indicators], levels=labels)
+end
+
+function TMLE.expected_value(model::Chain, X, labels)
+    p = softmax(model(X))
+    return transpose(labels)*p
 end
 
 ### Mixture Density Network
@@ -184,4 +191,10 @@ function sample_from(model::MixtureDensityNetwork, X, labels=nothing)
     σ_xk = model.σ_xk(X)
     μ_xk = model.μ_xk(X)
     return rand(Normal(), length(k_x)) .* vec(σ_xk[k_x]) .+ vec(μ_xk[k_x])
+end
+
+function TMLE.expected_value(model::MixtureDensityNetwork, X, labels)
+    k_x = model.p_k_x(X)
+    μ_xk = model.μ_xk(X)
+    return sum(k_x .* μ_xk, dims=1)
 end

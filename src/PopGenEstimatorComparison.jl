@@ -30,10 +30,11 @@ include(joinpath("samplers", "permutation_null_sampler.jl"))
 include(joinpath("samplers", "density_estimate_sampler.jl"))
 
 include("estimation.jl")
-
+include("analysis.jl")
 include("cli.jl")
 
 export PermutationSampler, DensityEstimateSampler
+export theoretical_true_effect, empirical_true_effect, true_effect
 export MixtureDensityNetwork, CategoricalMLP
 export NeuralNetworkEstimator
 export GLMEstimator

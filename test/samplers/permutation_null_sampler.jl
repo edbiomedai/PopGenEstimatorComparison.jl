@@ -46,6 +46,18 @@ include(joinpath(TESTDIR, "testutils.jl"))
             outcome_extra_covariates = ()
     ))
     @test_throws AssertionError("All estimands should share the same confounders and covariates.") PermutationSampler(estimands)
+
+    # True effects
+    Ψ = estimands[1]
+    @test theoretical_true_effect(Ψ, sampler) == 0
+    @test empirical_true_effect(Ψ, sampler, origin_dataset; n=100_000) ≈ 0. atol=0.01
+    @test true_effect(Ψ, sampler, origin_dataset) == 0
+    Ψ = estimands[2]
+    @test theoretical_true_effect(Ψ, sampler) == [0, 0]
+    composed_effect = empirical_true_effect(Ψ, sampler, origin_dataset; n=100_000)
+    @test composed_effect[1] == - composed_effect[2]
+    @test composed_effect[1] ≈ 0 atol=0.01
+    @test true_effect(Ψ, sampler, origin_dataset) == [0, 0]
 end
 
 end
