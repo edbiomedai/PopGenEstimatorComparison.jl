@@ -1,7 +1,7 @@
 stages:
     make-dataset:
         wdir: dataset
-        cmd: nextflow run https://github.com/TARGENE/targene-pipeline -r v0.10.0 -entry MAKE_DATASET -profile local -resume -with-trace -with-report -N s2042526@ed.ac.uk
+        cmd: nextflow run https://github.com/TARGENE/targene-pipeline -r v0.10.0 -entry MAKE_DATASET -profile local -resume -N s2042526@ed.ac.uk
         deps:
             - nextflow.config
             - /exports/igmm/eddie/UK-BioBank-53116/imputed/ukb_snp_qc.txt
@@ -21,13 +21,13 @@ stages:
             - results/dataset.arrow
             - scripts/make_estimands_files.jl
         outs:
-            - assets/estimands/rs1421085_ATEs.jls
+            - assets/estimands/estimands.jls
     simulation:
         wdir: simulation
-        cmd: nextflow run ../main.nf -resume -profile eddie -with-trace -with-report -N s2042526@ed.ac.uk
+        cmd: nextflow run ../main.nf -resume -profile eddie -N s2042526@ed.ac.uk
         deps:
             - ../dataset/results/dataset.arrow
-            - ../assets/estimands/rs1421085_ATEs.jls
+            - ../assets/estimands/estimands.jls
             - nextflow.config
         outs:
             - results/permutation_results.hdf5
