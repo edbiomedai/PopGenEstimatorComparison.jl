@@ -14,10 +14,11 @@ process PermutationEstimation {
 
     script:
         out = "permutation_results__${rng}__${sample_size}__${estimands.getBaseName()}__${estimators.getBaseName()}.hdf5"
+        sample_size_option = sample_size != -1 ? "--sample-size=${sample_size}" : ""
         """
         mkdir workdir
         ${JuliaCmd()} estimation ${origin_dataset} ${estimands} ${estimators} \
-            --sample-size=${sample_size} \
+            ${sample_size_option} \
             --n-repeats=${params.N_REPEATS} \
             --out=${out} \
             --verbosity=${params.VERBOSITY} \

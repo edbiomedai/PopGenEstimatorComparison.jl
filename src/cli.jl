@@ -47,7 +47,7 @@ function cli_settings()
         "--sample-size"
             arg_type = Int
             help = "Size of simulated dataset."
-            default = 100
+            default = nothing
 
         "--n-repeats"
             arg_type = Int
@@ -141,8 +141,8 @@ function julia_main()::Cint
         estimate_from_simulated_data(
             cmd_settings["origin-dataset"],
             cmd_settings["estimands-config"],
-            cmd_settings["estimators-config"], 
-            cmd_settings["sample-size"];
+            cmd_settings["estimators-config"];
+            sample_size=cmd_settings["sample-size"],
             sampler_config=cmd_settings["density-estimates-prefix"],
             nrepeats=cmd_settings["n-repeats"],
             out=cmd_settings["out"],

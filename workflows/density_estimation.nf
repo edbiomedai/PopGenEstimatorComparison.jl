@@ -63,11 +63,12 @@ process EstimationFromDensityEstimates {
     script:
         out = "permutation_results__${rng}__${sample_size}__${estimands.getBaseName()}__${estimators.getBaseName()}.hdf5"
         density_estimate_prefix = LongestPrefix(density_estimates)
+        sample_size_option = sample_size != -1 ? "--sample-size=${sample_size}" : ""
         """
         mkdir workdir
         ${JuliaCmd()} estimation ${origin_dataset} ${estimands} ${estimators} \
             --density-estimates-prefix=${density_estimate_prefix} \
-            --sample-size=${sample_size} \
+            ${sample_size_option} \
             --n-repeats=${params.N_REPEATS} \
             --out=${out} \
             --verbosity=${params.VERBOSITY} \

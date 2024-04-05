@@ -9,7 +9,7 @@ using TMLE
     # For some reason if Julia is installed with juliaup on MacOS, the executable is not in ENV["PATH"]
     # Only Test the workflow runs for now
     r = run(addenv(
-        `nextflow run main.nf -c test/assets/config/permutation.config -resume`, 
+        `nextflow run main.nf -c test/assets/testconfig.config -resume`, 
         "PATH" => ENV["PATH"] * ":" * Sys.BINDIR
     ))
     @test r.exitcode == 0

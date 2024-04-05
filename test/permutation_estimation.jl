@@ -30,7 +30,7 @@ include(joinpath(TESTDIR, "testutils.jl"))
 
 function test_results(out)
     results = jldopen(io -> io["results"], out)
-    @test names(results) == ["TMLE", "REPEAT_ID", "SAMPLE_SIZE", "RNG_SEED"]
+    @test names(results) == ["TMLE", "REPEAT_ID", "SAMPLE_SIZE", "RNG_SEED", "STATISTICS"]
     @test size(results, 1) == 2*2*2
     @test results.RNG_SEED == [0, 0, 0, 0, 1, 1, 1, 1]
     @test results.REPEAT_ID == [1, 1, 2, 2, 1, 1, 2, 2]

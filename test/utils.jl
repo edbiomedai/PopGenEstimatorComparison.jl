@@ -10,10 +10,25 @@ using DataFrames
 using MLJBase
 using TMLE
 using DataFrames
+using Arrow
 
 TESTDIR = joinpath(pkgdir(PopGenEstimatorComparison), "test")
 
 include(joinpath(TESTDIR, "testutils.jl"))
+
+@testset "Test compute_statistics" begin
+    dataset = DataFrame(Arrow.Table(joinpath(TESTDIR, "assets", "dataset.arrow")))
+    estimands = linear_interaction_dataset_ATEs().estimands
+    statistics = PopGenEstimatorComparison.compute_statistics(dataset, estimands)
+    # Continuous outcome, one treatment
+    @test names(statistics[1][:T₁]) == ["T₁", "proprow"]
+    # Binary outcome, two treatments
+    for key ∈ (:Ybin, :T₁, :T₂, (:T₁, :T₂) ,(:Ybin, :T₁, :T₂))
+        stats = statistics[2][key]
+        @test stats isa DataFrame
+        @test hasproperty(stats, "proprow")
+    end
+end
 
 @testset "Test estimands variables accessors" begin
     Ψ, composedΨ = linear_interaction_dataset_ATEs().estimands

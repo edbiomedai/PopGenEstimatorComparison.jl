@@ -39,6 +39,31 @@ function get_conditional_densities_variables(estimands)
     return [Dict("outcome" => pair[2], "parents" => collect(pair[1])) for pair in conditional_densities_variables]
 end
 
+function compute_statistics(dataset, Ψ::TMLE.Estimand)
+    outcome = get_outcome(Ψ)
+    treatments = get_treatments(Ψ)
+    nomissing_dataset = dropmissing(dataset, [outcome, treatments..., confounders_and_covariates_set(Ψ)...])
+    categorical_variables = autotype(dataset[!, outcome]) <: Finite ? (outcome, treatments...) : treatments
+
+    statistics = Dict()
+    # Each Variable
+    for variable ∈ categorical_variables
+        statistics[variable] = DataFrames.combine(groupby(nomissing_dataset, variable), proprow)
+    end
+    # Joint treatment
+    if length(treatments) > 1
+        statistics[treatments] = DataFrames.combine(groupby(nomissing_dataset, collect(treatments)), proprow)
+    end
+    # Joint treatment/outcome
+    if length(categorical_variables) > length(treatments)
+        statistics[categorical_variables] = DataFrames.combine(groupby(nomissing_dataset, collect(categorical_variables)), proprow)
+    end
+    return statistics
+end
+
+compute_statistics(dataset, estimands) =
+    [compute_statistics(dataset, Ψ) for Ψ in estimands]
+
 ########################################################################
 ###                    Train / Validation Splits                     ###
 ########################################################################
