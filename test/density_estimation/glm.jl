@@ -29,7 +29,7 @@ include(joinpath(TESTDIR, "testutils.jl"))
     @test y_sampled isa Vector
     # Expected value
     μs = [x.μ for x in MLJBase.predict(estimator.machine, X)]
-    @test TMLE.expected_value(estimator, X) == μs
+    @test TMLE.expected_value(estimator, X, nothing) == μs
     # Evaluate 
     metrics = evaluation_metrics(estimator, X, y)
     @test metrics isa NamedTuple{(:logloss,)}
@@ -51,7 +51,7 @@ end
     @test y_sampled isa CategoricalVector
     # Expected value
     μs = [x.prob_given_ref[2] for x in MLJBase.predict(estimator.machine, X)]
-    @test TMLE.expected_value(estimator, X) == μs
+    @test TMLE.expected_value(estimator, X, nothing) == μs
     # Evaluate 
     metrics = evaluation_metrics(estimator, X, y)
     @test metrics isa NamedTuple{(:logloss,)}
