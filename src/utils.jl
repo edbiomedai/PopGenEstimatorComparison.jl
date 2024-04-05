@@ -48,15 +48,15 @@ function compute_statistics(dataset, Ψ::TMLE.Estimand)
     statistics = Dict()
     # Each Variable
     for variable ∈ categorical_variables
-        statistics[variable] = DataFrames.combine(groupby(nomissing_dataset, variable), proprow)
+        statistics[variable] = DataFrames.combine(groupby(nomissing_dataset, variable), proprow, nrow)
     end
     # Joint treatment
     if length(treatments) > 1
-        statistics[treatments] = DataFrames.combine(groupby(nomissing_dataset, collect(treatments)), proprow)
+        statistics[treatments] = DataFrames.combine(groupby(nomissing_dataset, collect(treatments)), proprow, nrow)
     end
     # Joint treatment/outcome
     if length(categorical_variables) > length(treatments)
-        statistics[categorical_variables] = DataFrames.combine(groupby(nomissing_dataset, collect(categorical_variables)), proprow)
+        statistics[categorical_variables] = DataFrames.combine(groupby(nomissing_dataset, collect(categorical_variables)), proprow, nrow)
     end
     return statistics
 end

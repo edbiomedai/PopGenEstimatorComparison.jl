@@ -21,12 +21,13 @@ include(joinpath(TESTDIR, "testutils.jl"))
     estimands = linear_interaction_dataset_ATEs().estimands
     statistics = PopGenEstimatorComparison.compute_statistics(dataset, estimands)
     # Continuous outcome, one treatment
-    @test names(statistics[1][:T₁]) == ["T₁", "proprow"]
+    @test names(statistics[1][:T₁]) == ["T₁", "proprow", "nrow"]
     # Binary outcome, two treatments
     for key ∈ (:Ybin, :T₁, :T₂, (:T₁, :T₂) ,(:Ybin, :T₁, :T₂))
         stats = statistics[2][key]
         @test stats isa DataFrame
         @test hasproperty(stats, "proprow")
+        @test hasproperty(stats, "nrow")
     end
 end
 
