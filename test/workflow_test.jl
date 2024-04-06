@@ -16,7 +16,7 @@ using TMLE
 
     jldopen(joinpath("results", "permutation_results.hdf5")) do io
         results = io["results"]
-        @test size(results) == (16, 4)
+        @test size(results) == (16, 5)
         @test Set(results.REPEAT_ID) == Set([1, 2])
         @test Set(results.SAMPLE_SIZE) == Set([100, 200])
         @test Set(results.RNG_SEED) == Set([0])
@@ -26,7 +26,7 @@ using TMLE
 
     jldopen(joinpath("results", "from_densities_results.hdf5")) do io
         results = io["results"]
-        @test size(results) == (16, 4)
+        @test size(results) == (16, 5)
         @test Set(results.REPEAT_ID) == Set([1, 2])
         @test Set(results.SAMPLE_SIZE) == Set([100, 200])
         @test Set(results.RNG_SEED) == Set([0])
