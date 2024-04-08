@@ -2,8 +2,8 @@ module TestNeuralNetEstimation
 
 using Test
 using PopGenEstimatorComparison
-using PopGenEstimatorComparison: net_train_validation_split, X_y,
-    compute_loss, early_stopping_message, train_validation_split
+using PopGenEstimatorComparison: X_y, early_stopping_message, 
+    train_validation_split
 using Random
 using Distributions
 using DataFrames
@@ -25,7 +25,7 @@ include(joinpath(TESTDIR, "testutils.jl"))
     X_train, y_train, X_val, y_val = train_validation_split(X, y)
 
     # Training and Evaluation
-    estimator = NeuralNetworkEstimator(MixtureDensityNetwork(), max_epochs=10_000)
+    estimator = NeuralNetworkEstimator(X, y, max_epochs=10_000)
     training_loss_before_train = evaluation_metrics(estimator, X_train, y_train).logloss
     val_loss_before_train = evaluation_metrics(estimator, X_val, y_val).logloss
     @test_logs (:info, early_stopping_message(5)) train!(estimator, X, y, verbosity=1)
@@ -38,7 +38,7 @@ include(joinpath(TESTDIR, "testutils.jl"))
     @test y_sampled isa Vector
     # Expected_value
     oracle_prediction = sinusoid_function(X.x)
-    network_prediction = TMLE.expected_value(estimator, X, nothing)
+    network_prediction = TMLE.expected_value(estimator, X)
     network_mse = mean((network_prediction .- y).^2)
     oracle_mse = mean((oracle_prediction .- y).^2)
     relative_error = 100(network_mse - oracle_mse) / oracle_mse
@@ -61,7 +61,7 @@ end
     X = Float32.(DataFrame(X))
     X_train, y_train, X_val, y_val = train_validation_split(X, y)
     # Training and Evaluation
-    estimator = NeuralNetworkEstimator(CategoricalMLP(input_size=2, hidden_sizes=(20, 2)), max_epochs=10_000)
+    estimator = NeuralNetworkEstimator(X, y, max_epochs=10_000)
     training_loss_before_train = evaluation_metrics(estimator, X_train, y_train).logloss
     val_loss_before_train = evaluation_metrics(estimator, X_val, y_val).logloss
     @test_logs (:info, early_stopping_message(5)) train!(estimator, X, y, verbosity=1)
@@ -70,13 +70,13 @@ end
     @test training_loss_before_train > training_loss_after_train
     @test val_loss_before_train > val_loss_after_train
     # Sample, it is almost perfect here because the problem is too simple
-    y_sampled = sample_from(estimator, X, levels(y))
+    y_sampled = sample_from(estimator, X)
     @test sum(y_sampled != y) < 5
     @test y_sampled isa CategoricalArrays.CategoricalVector
     labels = levels(y)
     @test levels(y_sampled) == labels
     # Expected_value    
-    network_prediction = TMLE.expected_value(estimator, X, labels)
+    network_prediction = TMLE.expected_value(estimator, X)
     # No prediction closer to the incorect label
     @test sum(abs.(network_prediction .- float(y)) .> 0.5) == 0
 end

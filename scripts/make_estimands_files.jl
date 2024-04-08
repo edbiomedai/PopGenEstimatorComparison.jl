@@ -18,7 +18,7 @@ function getTraits()
     ])
 end
 
-function getATEs(confounders, outcome_extra_covariates; traits = getTraits(), positivity_constraint=0.)
+function getATEs(dataset, confounders, outcome_extra_covariates; traits = getTraits(), positivity_constraint=0.)
     variants = [(:rs117913124,), (:rs2076530,), (:rs12785878,)]
     return reduce(vcat, factorialEstimands(
         ATE, dataset, variant, traits; 
@@ -29,7 +29,7 @@ function getATEs(confounders, outcome_extra_covariates; traits = getTraits(), po
     )
 end
 
-function getIATEs(confounders, outcome_extra_covariates; traits = getTraits(), positivity_constraint=0.)
+function getIATEs(dataset, confounders, outcome_extra_covariates; traits = getTraits(), positivity_constraint=0.)
     variants_pairs = [(:rs1805005, :rs6059655), (:rs1805007, :rs6088372)]
     return reduce(vcat, factorialEstimands(
             IATE, dataset, variants_pair, traits;
@@ -67,7 +67,7 @@ function variables_from_dataset(dataset)
 end
 
 function main()
-    DATASET_FILE = joinpath("results", "dataset.arrow")
+    DATASET_FILE = joinpath("dataset", "results", "dataset.arrow")
     DESTINATION_DIR = joinpath("assets", "estimands")
     positivity_constraint = 0.
     @assert isdir(DESTINATION_DIR)
@@ -76,16 +76,18 @@ function main()
     variables = variables_from_dataset(dataset)
 
     ATEs = getATEs(
+        dataset,
         variables.confounders, 
         variables.outcome_extra_covariates; 
         positivity_constraint=positivity_constraint
     )
     IATEs = getIATEs(
+        dataset,
         variables.confounders, 
         variables.outcome_extra_covariates; 
         positivity_constraint=positivity_constraint
     )
-
+    estimands = groups_ordering(vcat(ATEs, IATEs))
     serialize(joinpath(DESTINATION_DIR, "estimands.jls"), Configuration(estimands=estimands))
 end
 

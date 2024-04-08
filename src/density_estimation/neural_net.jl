@@ -12,15 +12,27 @@ function X_y(dataset, Xcols, ycol)
     return X, y
 end
 
-function train!(estimator, X, y; verbosity=1)
-    model = estimator.model
+function train_val_dataloaders(estimator, X, y, train_samples, val_samples)
+    X = transpose_table(estimator, X)
+    y = transpose_target(y, estimator.labels)
+    X_train = X[:, train_samples]
+    X_val = X[:, val_samples]
+    y_train = y[:, train_samples]
+    y_val = y[:, val_samples]
 
-    # Dataloaders
-    X_train, y_train, X_val, y_val = net_train_validation_split(X, y; resampling=estimator.resampling)
-    n_train, n_val = length(y_train), length(y_val)
     train_loader = Flux.DataLoader((X_train, y_train), batchsize=estimator.batchsize)
     val_loader = Flux.DataLoader((X_val, y_val), batchsize=estimator.batchsize)
+    return train_loader, val_loader
+end
+
+function train!(estimator, X, y; verbosity=1)
+    model = estimator.model
     
+    # Dataloaders
+    train_samples, val_samples = stratified_holdout_train_val_samples(X, y; resampling=estimator.resampling)
+    n_train, n_val = length(train_samples), length(val_samples)
+    train_loader, val_loader = train_val_dataloaders(estimator, X, y, train_samples, val_samples)
+
     # Training Loop
     best_validation_loss = Inf
     best_model = Flux.state(model)
@@ -56,54 +68,58 @@ end
 
 struct NeuralNetworkEstimator
     model
+    encoder::MLJBase.Machine
     optimiser::Flux.Optimise.AbstractOptimiser
     resampling::MLJBase.ResamplingStrategy
     batchsize::Int
     patience::Int
     max_epochs::Int
+    labels::Union{Nothing, Vector}
+    function NeuralNetworkEstimator(X, y; 
+        hidden_sizes=(20,), 
+        K=3, 
+        optimiser = Adam(),
+        resampling = Holdout(),
+        batchsize = 64,
+        patience = 5,
+        max_epochs = 10,)
+        
+        encoder = machine(continuous_encoder(), X)
+        fit!(encoder, verbosity=0)
+        input_size = get_input_size(X)
+        labels = nothing
+        if y isa CategoricalVector
+            labels = levels(y)
+            output_size = length(labels)
+            hidden_sizes = tuple(hidden_sizes..., output_size)
+            model = CategoricalMLP(
+                input_size=input_size, 
+                hidden_sizes=hidden_sizes,
+            )
+        else
+            model = MixtureDensityNetwork(
+                input_size=input_size, 
+                hidden_sizes=hidden_sizes,
+                K=K
+            )
+        end
+
+        return new(model, encoder, optimiser, resampling, batchsize, patience, max_epochs, labels)
+    end
 end
 
-MLJBase.serializable(estimator::NeuralNetworkEstimator) = estimator
+serializable!(estimator::NeuralNetworkEstimator) = estimator
 
 MLJBase.restore!(estimator::NeuralNetworkEstimator) = estimator
 
-NeuralNetworkEstimator(model;
-    optimiser = Adam(),
-    resampling = Holdout(),
-    batchsize = 64,
-    patience = 5,
-    max_epochs = 10,
-    ) = NeuralNetworkEstimator(model, optimiser, resampling, batchsize, patience, max_epochs)
-
-NeuralNetworkEstimator(X, y::AbstractVector{<:AbstractFloat}; hidden_sizes=(20,), K=3, kwargs...) = 
-    NeuralNetworkEstimator(MixtureDensityNetwork(
-            input_size=get_input_size(X), 
-            hidden_sizes=hidden_sizes,
-            K=K
-            );
-        kwargs...
-    )
-
-function NeuralNetworkEstimator(X, y::CategoricalVector; hidden_sizes=(20,), K=3, kwargs...)
-    input_size = get_input_size(X)
-    output_size = length(levels(y))
-    hidden_sizes = tuple(hidden_sizes..., output_size)
-    NeuralNetworkEstimator(CategoricalMLP(
-            input_size=input_size, 
-            hidden_sizes=hidden_sizes,
-        );
-        kwargs...
-    )
-end
-
-sample_from(estimator::NeuralNetworkEstimator, X::DataFrame, labels=nothing) = 
-    sample_from(estimator.model, encode_or_reformat(X), labels)
+sample_from(estimator::NeuralNetworkEstimator, X::DataFrame) = 
+    sample_from(estimator.model, transpose_table(estimator, X), estimator.labels)
 
 function evaluation_metrics(estimator::NeuralNetworkEstimator, X, y)
-    return (logloss = compute_loss(estimator.model, encode_or_reformat(X), encode_or_reformat(y)), )
+    return (logloss = compute_loss(estimator.model, transpose_table(estimator, X), transpose_target(y, estimator.labels)), )
 end
 
-TMLE.expected_value(estimator::NeuralNetworkEstimator, X, labels) = vec(TMLE.expected_value(estimator.model, encode_or_reformat(X), labels))
+TMLE.expected_value(estimator::NeuralNetworkEstimator, X) = vec(TMLE.expected_value(estimator.model, transpose_table(estimator, X), estimator.labels))
 
 ### Categorical MLP
 

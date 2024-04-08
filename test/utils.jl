@@ -1,8 +1,8 @@
 module TestUtils
 
 using PopGenEstimatorComparison
-using PopGenEstimatorComparison: get_input_size, getlabels,
-    train_validation_split, net_train_validation_split,
+using PopGenEstimatorComparison: get_input_size, transpose_table,
+    transpose_target, getlabels, train_validation_split, 
     get_outcome, confounders_and_covariates_set, get_treatments
 using Test
 using CategoricalArrays
@@ -47,16 +47,35 @@ end
     # Test get_input_size
     ## The categorical variables counts for 2
     X = DataFrame(
-        x1 = [1,2], 
-        x2 = categorical([1,2])
+        x1 = [1,2, 3], 
+        x2 = categorical([1,2, 3]),
+        x3 = categorical([1, 2, 3], ordered=true)
     )
     @test get_input_size(X.x1) == 1
     @test get_input_size(X.x2) == 2
-    @test get_input_size(X) == 3
+    @test get_input_size(X.x3) == 1
+    @test get_input_size(X) == 4
     # Test getlabels
     ## Only Categorical Vectors return labels otherwise nothing
     @test getlabels(categorical(["AC", "CC", "CC"])) == ["AC", "CC"]
     @test getlabels([1, 2]) === nothing
+    # transpose_table
+    X = (
+        A = [1, 2, 3],
+        B = [4, 5, 6]
+    )
+    Xt = transpose_table(X)
+    @test Xt == [
+        1.0 2.0 3.0
+        4.0 5.0 6.0
+    ]
+    @test Xt isa Matrix{Float32}
+    @test transpose_target([1, 2, 3], nothing) == [1.0 2.0 3.0]
+    y = categorical([1, 2, 1, 2])
+    @test transpose_target(y, levels(y)) == [
+        1 0 1 0
+        0 1 0 1
+    ]
 end
 
 @testset "Test train_validation_split" begin
@@ -66,12 +85,6 @@ end
     @test size(y_val, 1) == 10
     @test X_train isa NamedTuple
     @test X_val isa NamedTuple
-
-    X_train, y_train, X_val, y_val = net_train_validation_split(X, y)
-    @test size(X_train) == (2, 90)
-    @test size(X_val) == (2, 10)
-    @test size(y_train) == (3, 90)
-    @test size(y_val) == (3, 10)
 end
 
 end

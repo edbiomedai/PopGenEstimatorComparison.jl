@@ -2,11 +2,14 @@
 ###                          Misc Functions                          ###
 ########################################################################
 
+continuous_encoder() = ContinuousEncoder(drop_last=true)
+
 getlabels(col::CategoricalVector) = levels(col)
 getlabels(col) = nothing
 
-get_input_size(x::CategoricalVector) = length(levels(x))
-get_input_size(x::AbstractVector) = 1
+get_input_size(::Type{Multiclass{N}}) where N = N - 1 
+get_input_size(::Type) = 1
+get_input_size(x::AbstractVector) = get_input_size(elscitype(x))
 get_input_size(X) = sum(get_input_size(x) for x in eachcol(X))
 
 propensity_score_inputs(variables) = collect(variables.confounders)
@@ -25,9 +28,13 @@ variables_from_args(outcome, treatments, confounders, outcome_extra_covariates) 
     outcome_extra_covariates = Symbol.(Tuple(outcome_extra_covariates))
     )
 
-encode_or_reformat(y::CategoricalVector) = onehotbatch(y, levels(y))
-encode_or_reformat(y::AbstractVector) = Float32.(reshape(y, 1, length(y)))
-encode_or_reformat(X) = vcat((encode_or_reformat(Tables.getcolumn(X, n)) for n in Tables.columnnames(X))...)
+transpose_target(y, labels) = onehotbatch(y, labels)
+transpose_target(y, ::Nothing) = Float32.(reshape(y, 1, length(y)))
+
+transpose_table(X) = Float32.(Tables.matrix(X, transpose=true))
+transpose_table(estimator, X) =
+    transpose_table(MLJBase.transform(estimator.encoder, X))
+
 
 function get_conditional_densities_variables(estimands)
     conditional_densities_variables = Set{Pair}([])
@@ -68,29 +75,23 @@ compute_statistics(dataset, estimands) =
 ###                    Train / Validation Splits                     ###
 ########################################################################
 
-function train_validation_split(X, y; train_ratio=10, resampling=JointStratifiedCV(patterns=[r"^rs[0-9]+"], resampling=StratifiedCV(nfolds=train_ratio)))
+function stratified_holdout_train_val_samples(X, y;
+    resampling=JointStratifiedCV(patterns=[r"^rs[0-9]+"], resampling=StratifiedCV(nfolds=10))
+    )
+    first(MLJBase.train_test_pairs(resampling, 1:length(y), X, y))
+end
+
+function train_validation_split(X, y; 
+    train_ratio=10, 
+    resampling=JointStratifiedCV(patterns=[r"^rs[0-9]+"], resampling=StratifiedCV(nfolds=train_ratio))
+    )
     # Get Train/Validation Splits
-    train_samples, val_samples = first(MLJBase.train_test_pairs(resampling, 1:length(y), X, y))
+    train_samples, val_samples = stratified_holdout_train_val_samples(X, y; resampling=resampling)
     # Split Data
     X_train = selectrows(X, train_samples)
     X_val = selectrows(X, val_samples)
     y_train = selectrows(y, train_samples)
     y_val = selectrows(y, val_samples)
-
-    return (X_train, y_train, X_val, y_val)
-end
-
-function net_train_validation_split(X, y; train_ratio=10, resampling=JointStratifiedCV(patterns=[r"^rs[0-9]+"], resampling=StratifiedCV(nfolds=train_ratio)))
-    # Get Train/Validation Splits
-    train_samples, val_samples = first(MLJBase.train_test_pairs(resampling, 1:length(y), X, y))
-    # One Hot Encode Categorical variables
-    X = encode_or_reformat(X)
-    y = encode_or_reformat(y)
-    # Split Data
-    X_train = X[:, train_samples]
-    X_val = X[:, val_samples]
-    y_train = y[:, train_samples]
-    y_val = y[:, val_samples]
 
     return (X_train, y_train, X_val, y_val)
 end

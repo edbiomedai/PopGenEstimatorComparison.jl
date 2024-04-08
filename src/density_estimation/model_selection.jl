@@ -90,7 +90,7 @@ function density_estimation_inputs(datasetfile, estimands_prefix; batchsize=10, 
     end
 end
 
-MLJBase.serializable(estimators::AbstractVector) = [serializable(estimator) for estimator in estimators]
+serializable!(estimators::AbstractVector) = [serializable!(estimator) for estimator in estimators]
 
 function density_estimation(
     dataset_file,
@@ -110,7 +110,7 @@ function density_estimation(
     metrics = []
     for estimator in density_estimators
         train!(estimator, X_train, y_train, verbosity=verbosity-1)
-        train_loss = evaluation_metrics(estimator, X_train, y_train).logloss
+        train_loss = PopGenEstimatorComparison.evaluation_metrics(estimator, X_train, y_train).logloss
         test_loss = evaluation_metrics(estimator, X_test, y_test).logloss
         push!(metrics, (train_loss=train_loss, test_loss=test_loss))
     end
@@ -123,9 +123,9 @@ function density_estimation(
         jldopen(output, "w") do io
             io["outcome"] = outcome
             io["parents"] = parents
-            io["estimators"] = serializable(density_estimators)
+            io["estimators"] = serializable!(density_estimators)
             io["metrics"] = metrics
-            io["best-estimator"] = serializable(best_estimator)
+            io["best-estimator"] = serializable!(best_estimator)
         end
     end
     return 0
