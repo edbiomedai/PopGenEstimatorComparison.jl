@@ -110,7 +110,7 @@ function density_estimation(
     metrics = []
     for estimator in density_estimators
         train!(estimator, X_train, y_train, verbosity=verbosity-1)
-        train_loss = PopGenEstimatorComparison.evaluation_metrics(estimator, X_train, y_train).logloss
+        train_loss = evaluation_metrics(estimator, X_train, y_train).logloss
         test_loss = evaluation_metrics(estimator, X_test, y_test).logloss
         push!(metrics, (train_loss=train_loss, test_loss=test_loss))
     end
