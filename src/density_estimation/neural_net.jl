@@ -2,9 +2,6 @@
 
 early_stopping_message(patience) =  string("Validation Loss stopped decreasing for ", patience, " consecutive epochs. Early Stopping.")
 
-maybe_float_32(x::AbstractVector{<:AbstractFloat}) = convert(Vector{Float32}, x)
-maybe_float_32(x) = x
-
 function X_y(dataset, Xcols, ycol)
     outcome_dataset = dropmissing(dataset, Symbol.([Xcols..., ycol]))
     X = outcome_dataset[:, collect(Xcols)]
@@ -40,6 +37,7 @@ function train!(estimator, X, y; verbosity=1)
     es = Flux.early_stopping(() -> epoch_validation_loss, estimator.patience; init_score = Inf)
     opt_state = Flux.setup(estimator.optimiser, model)
     for epoch in 1:estimator.max_epochs
+        # Training
         epoch_training_loss = 0.
         for (xbatch, ybatch) in train_loader
             training_loss, grads = Flux.withgradient(model) do m
@@ -48,15 +46,23 @@ function train!(estimator, X, y; verbosity=1)
             epoch_training_loss += training_loss*length(ybatch)
             Flux.update!(opt_state, model, grads[1])
         end
+        # Check for NaNs
+        if isnan(epoch_training_loss)
+            throw(ErrorException("NaNs were encountered during training."))
+        end
+        # Compute Validation Loss
         epoch_training_loss /= n_train
-        epoch_validation_loss = sum(length(ybatch)*compute_loss(model, xbatch, ybatch) for (xbatch, ybatch) in val_loader) / n_val
+        epoch_validation_loss = sum(length(ybatch)*PopGenEstimatorComparison.compute_loss(model, xbatch, ybatch) for (xbatch, ybatch) in val_loader) / n_val
+        # Update Best Model
         if epoch_validation_loss < best_validation_loss
             best_validation_loss = epoch_validation_loss
             best_model = Flux.state(model)
         end
+        # Log Losses
         if verbosity > 1 
             @info string("Epoch: ", epoch, ", Training Loss: ",  epoch_training_loss, ", Validation Loss: ", epoch_validation_loss)
         end
+        # Check for early stopping
         if epoch_validation_loss == 0 || es()
             verbosity > 0 && @info early_stopping_message(estimator.patience)
             break
@@ -181,6 +187,10 @@ function MixtureDensityNetwork(;input_size=1, hidden_sizes=(20,), K=3)
     return MixtureDensityNetwork(p_k_x, σ_xk, μ_xk)
 end
 
+exponent(y, μ, σ, p_k_x) =
+    @. log(p_k_x) - log(sqrt(2π)) - log(σ) - 0.5((y - μ) / σ)^2
+
+
 function (model::MixtureDensityNetwork)(x, y)
     p_k_x = model.p_k_x(x)
     σ_xk = model.σ_xk(x)
@@ -191,11 +201,16 @@ end
 
 Flux.@functor MixtureDensityNetwork
 
-gaussian_kernel(y, μ, σ) = 1 ./ ((sqrt(2π).*σ)) .* exp.(-0.5((y .- μ)./σ).^2)
+gaussian_kernel(y, μ, σ) = @. exp(- log(sqrt(2π)) - log(σ) - 0.5((y - μ) / σ)^2)
 
 logloss(x) = - mean(log.(x))
 
-compute_loss(model, x, y::Matrix{<:AbstractFloat}) = logloss(model(x, y))
+function compute_loss(model::MixtureDensityNetwork, x, y::Matrix{<:AbstractFloat})
+    p_k_x = model.p_k_x(x)
+    σ_xk = model.σ_xk(x)
+    μ_xk = model.μ_xk(x)
+    return - mean(logsumexp(exponent(y, μ_xk, σ_xk, p_k_x), dims=1))
+end
 
 function gumbel_sample(x)
     z = rand(Gumbel(), size(x))
