@@ -1,6 +1,7 @@
 include { JuliaCmd } from './functions.nf'
 
 process AggregateResults {
+    label "bigmem"
     publishDir "${params.OUTDIR}", mode: 'symlink'
 
     input:
