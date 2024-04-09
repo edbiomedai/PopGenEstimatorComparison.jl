@@ -2,6 +2,10 @@
 ###                          Misc Functions                          ###
 ########################################################################
 
+serializable!(estimator) = estimator
+
+MLJBase.restore!(estimator::NeuralNetworkEstimator) = estimator
+
 continuous_encoder() = ContinuousEncoder(drop_last=true)
 
 getlabels(col::CategoricalVector) = levels(col)
