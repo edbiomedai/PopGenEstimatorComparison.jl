@@ -153,7 +153,6 @@ end
         Dict("parents" => ["W"], "outcome" => "T₁"),
         Dict("parents" => ["C", "T₁", "T₂", "W"], "outcome" => "Ybin")
     ])
-
 end
 
 @testset "Test density_estimation: sinusoidal problem" begin
@@ -182,11 +181,12 @@ end
     PopGenEstimatorComparison.julia_main()
 
     jldopen(output) do io
-        @test io["best-estimator"] isa NeuralNetworkEstimator
+        @test io["best-estimator"] isa SieveNeuralNetworkEstimator
         @test io["outcome"] == :x
         @test io["parents"] == [:y]
+        @test length(io["estimators"]) == 2
         metrics = io["metrics"]
-        @test length(metrics) == 3
+        @test length(metrics) == 2
     end
 end
 
@@ -211,11 +211,13 @@ end
         @test io["outcome"] == :Ybin
         @test io["parents"] == [:C, :T₁, :W]
         metrics = io["metrics"]
-        @test length(metrics) == 3
-        @test length(io["estimators"]) == 3
+        @test length(metrics) == 2
+        @test length(io["estimators"]) == 2
         @test haskey(io, "best-estimator")
     end
 end
+
+
 
 end
 

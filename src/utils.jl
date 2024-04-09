@@ -4,7 +4,7 @@
 
 serializable!(estimator) = estimator
 
-MLJBase.restore!(estimator::NeuralNetworkEstimator) = estimator
+MLJBase.restore!(estimator) = estimator
 
 continuous_encoder() = ContinuousEncoder(drop_last=true)
 

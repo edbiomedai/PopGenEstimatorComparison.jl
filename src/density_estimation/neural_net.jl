@@ -245,10 +245,10 @@ Procedure:
 """
 mutable struct SieveNeuralNetworkEstimator
     neural_net_estimator::NeuralNetworkEstimator
-    hidden_sizes_candidates::Vector
+    hidden_sizes_candidates::Vector{Vector}
     sieve_patience::Int
     function SieveNeuralNetworkEstimator(X, y; 
-        hidden_sizes_candidates=[(20,)],
+        hidden_sizes_candidates=[[20,]],
         sieve_patience=2,
         K=3, 
         optimiser = Adam(),
@@ -267,7 +267,7 @@ mutable struct SieveNeuralNetworkEstimator
             max_epochs = max_epochs,
         )
 
-        return new(neural_net_estimator, hidden_sizes_candidates, sieve_patience)
+        return new(neural_net_estimator, [collect(x) for x in hidden_sizes_candidates], sieve_patience)
     end
 end
 

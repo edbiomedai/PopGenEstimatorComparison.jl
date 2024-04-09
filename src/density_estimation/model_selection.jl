@@ -2,10 +2,12 @@
 This is a hardcoded function providing a list of density estimators
 """
 function test_density_estimators(X, y; batchsize=16)
-    hidden_sizes_list = ((20,), (20, 20))
-    neural_nets = (NeuralNetworkEstimator(X, y; hidden_sizes=hidden_sizes, batchsize=batchsize) for hidden_sizes in hidden_sizes_list)
-    glms = (GLMEstimator(X, y),)
-    return collect(Iterators.flatten((neural_nets, glms)))
+    snne = SieveNeuralNetworkEstimator(X, y; 
+        hidden_sizes_candidates=[(20,), (20, 20)], 
+        batchsize=batchsize
+    )
+    glm = GLMEstimator(X, y)
+    return [snne, glm]
 end
 
 function get_density_estimators end
@@ -96,7 +98,7 @@ function density_estimation(
     dataset_file,
     density_file;
     estimators_list=nothing,
-    output=string("density_estimate_", outcome, ".hdf5"),
+    output=string("density_estimate.hdf5"),
     train_ratio=10,
     verbosity=1
     )
@@ -123,9 +125,9 @@ function density_estimation(
         jldopen(output, "w") do io
             io["outcome"] = outcome
             io["parents"] = parents
-            io["estimators"] = serializable!(density_estimators)
+            io["estimators"] = PopGenEstimatorComparison.serializable!(density_estimators)
             io["metrics"] = metrics
-            io["best-estimator"] = serializable!(best_estimator)
+            io["best-estimator"] = PopGenEstimatorComparison.serializable!(best_estimator)
         end
     end
     return 0
