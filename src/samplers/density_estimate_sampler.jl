@@ -8,15 +8,11 @@ struct DensityEstimateSampler
 end
 
 function DensityEstimateSampler(prefix, estimands)
-    densities_dir, _prefix = splitdir(prefix)
-    _densities_dir = densities_dir == "" ? "." : densities_dir
     # Create density to file map (There could be more files than actually required)
     density_mapping = Dict()
-    for f in readdir(_densities_dir)
-        if startswith(f, _prefix)
-            jldopen(joinpath(densities_dir, f)) do io
-                density_mapping[(Symbol(io["outcome"]) => Tuple(Symbol.(io["parents"])))] = joinpath(densities_dir, f)
-            end
+    for f ∈ files_matching_prefix(prefix)
+        jldopen(f) do io
+            density_mapping[(Symbol(io["outcome"]) => Tuple(Symbol.(io["parents"])))] = f
         end
     end
     # Create required density to file map

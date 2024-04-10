@@ -13,9 +13,24 @@ function cli_settings()
         "density-estimation-inputs"
             action = :command
             help = "Generates density estimation inputs."
+
         "density-estimation"
             action = :command
             help = "Estimate a conditional density."
+        
+        "analyse"
+            action = :command
+            help = "Run analyses script and generate plots."
+    end
+
+    @add_arg_table! s["analyse"] begin
+        "results-file"
+            arg_type = String
+            help = "Aggregated result file output by the `aggregate` command."
+            
+        "--out-prefix"
+            arg_type = String
+            help = "Output prefix, will be infered from the input file by default."
     end
 
     @add_arg_table! s["aggregate"] begin

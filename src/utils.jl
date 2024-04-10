@@ -104,6 +104,19 @@ end
 ###                    Results Files Manipulation                    ###
 ########################################################################
 
+function files_matching_prefix(prefix)
+    directory, _prefix = splitdir(prefix)
+    _directory = directory == "" ? "." : directory
+
+    return map(
+        f -> joinpath(directory, f),
+        filter(
+            f -> startswith(f, _prefix), 
+            readdir(_directory)
+        )
+    )
+end
+
 function read_results_file(file)
     jldopen(file) do io
         return reduce(vcat, (io[key] for key in keys(io)))

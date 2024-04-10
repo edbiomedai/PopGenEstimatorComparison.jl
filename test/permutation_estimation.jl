@@ -28,15 +28,6 @@ TESTDIR = joinpath(PKGDIR, "test")
 
 include(joinpath(TESTDIR, "testutils.jl"))
 
-function test_results(out)
-    results = jldopen(io -> io["results"], out)
-    @test names(results) == ["TMLE", "REPEAT_ID", "SAMPLE_SIZE", "RNG_SEED", "STATISTICS"]
-    @test size(results, 1) == 2*2*2
-    @test results.RNG_SEED == [0, 0, 0, 0, 1, 1, 1, 1]
-    @test results.REPEAT_ID == [1, 1, 2, 2, 1, 1, 2, 2]
-    @test results.SAMPLE_SIZE == [100, 100, 100, 100, 200, 200, 200, 200]
-end
-
 @testset "Integration Test Permutation Estimation" begin
     outdir = mktempdir()
     nrepeats = 2
@@ -68,7 +59,7 @@ end
     out2 = joinpath(outdir, "permutation_results_2.hdf5")
     copy!(ARGS, [
         "estimation",
-        joinpath(TESTDIR, "assets", "dataset.arrow"),
+        dataset_file,
         joinpath(TESTDIR, "assets", "estimands", "estimands_ates.jls"),
         joinpath(PKGDIR, "assets", "estimators-configs", "vanilla-xgboost.jl"),
         "--sample-size=200",
@@ -90,7 +81,7 @@ end
     out3 = joinpath(outdir, "permutation_results_3.hdf5")
     copy!(ARGS, [
         "estimation",
-        joinpath(TESTDIR, "assets", "dataset.arrow"),
+        dataset_file,
         joinpath(TESTDIR, "assets", "estimands", "estimands_ates.jls"),
         joinpath(PKGDIR, "assets", "estimators-configs", "vanilla-xgboost.jl"),
         "--sample-size=200",
@@ -128,6 +119,17 @@ end
         @test run_2_3.REPEAT_ID == [1, 1, 2, 2, 1, 1, 2, 2]
         @test run_2_3.RNG_SEED ==[1, 1, 1, 1, 2, 2, 2, 2]
     end
+    # Analyse results
+    results_file = out
+    estimands_prefix = joinpath(TESTDIR, "assets", "estimands", "estimands_ates.jls")
+    density_estimates_prefix = nothing
+    n = 500_000
+    copy!(ARGS, [
+        "analyse",
+        joinpath(outdir, "permutation_results"),
+        out,
+    ])
+
 end
 
 end

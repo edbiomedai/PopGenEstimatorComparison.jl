@@ -39,8 +39,8 @@ function sample_from(sampler::PermutationSampler, origin_dataset; n=100)
     return sampled_dataset
 end
 
-theoretical_true_effect(Ψ, sampler::PermutationSampler) = 0
-theoretical_true_effect(Ψ::ComposedEstimand, sampler::PermutationSampler) = [0 for _ in Ψ.args]
+theoretical_true_effect(Ψ, sampler::PermutationSampler) = 0.
+theoretical_true_effect(Ψ::ComposedEstimand, sampler::PermutationSampler) = [0. for _ in Ψ.args]
 
 """
 For this generating process, Y is independent of both T and W.
