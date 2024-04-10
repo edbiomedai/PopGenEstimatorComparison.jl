@@ -79,7 +79,7 @@ include(joinpath(TESTDIR, "testutils.jl"))
         end
     end
     # Estimation From Densities
-    estimators_config = joinpath(PKGDIR, "assets", "estimators-configs", "glm.jl")
+    estimators_config = joinpath(PKGDIR, "assets", "estimators-configs", "vanilla-glmnet.jl")
     estimands_file = joinpath(de_inputs_dir, "de_group_1_estimands_1.jls")
     outdir = mktempdir()
     copy!(ARGS, [
@@ -100,12 +100,15 @@ include(joinpath(TESTDIR, "testutils.jl"))
     PopGenEstimatorComparison.julia_main()
 
     jldopen(joinpath(outdir, "results.hdf5")) do io
+        @test io["estimators"] == (:wTMLE_GLMNET, :TMLE_GLMNET, :OSE_GLMNET)
+        # 1 repeat
+        @test length(io["statistics_by_repeat_id"]) == 1
+        @test io["sample_size"] == 100
         results = io["results"]
         @test results.REPEAT_ID == [1, 1]
         @test results.RNG_SEED == [1, 1]
-        @test results.SAMPLE_SIZE == [100, 100]
         # At least one success
-        @test count(x -> x isa TMLE.Estimate, results.TMLE) > 0
+        @test count(x -> x isa TMLE.Estimate, results.TMLE_GLMNET) > 0
     end
 end
 

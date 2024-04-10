@@ -1,15 +1,16 @@
-xgboost_regressor = XGBoostRegressor(tree_method="hist")
 xgboost_classifier = XGBoostClassifier(tree_method="hist")
+xgboost_regressor = XGBoostRegressor(tree_method="hist")
+resampling = JointStratifiedCV(patterns=[r"^rs[0-9]+"], resampling=StratifiedCV(nfolds=3))
 
 default_models = TMLE.default_models(
   # For the estimation of E[Y|W, T]: continuous outcome
   Q_continuous = Stack(
     metalearner        = LinearRegressor(fit_intercept=false),
-    resampling         = CV(nfolds=3),
+    resampling         = resampling,
     cache              = false,
     glmnet             = Pipeline(
       RestrictedInteractionTransformer(order=2, primary_variables_patterns=[r"^rs[0-9]+"]),
-      GLMNetRegressor(resampling=CV(nfolds=3)),
+      GLMNetRegressor(resampling=resampling),
       cache = false
     ),
     lr                 = Pipeline(
@@ -19,7 +20,7 @@ default_models = TMLE.default_models(
     ),
     tuned_xgboost      = TunedModel(
         model = xgboost_regressor,
-        resampling = CV(nfolds=3),
+        resampling = resampling,
         tuning = Grid(goal=20),
         range = [
             range(xgboost_regressor, :max_depth, lower=3, upper=7), 
@@ -32,11 +33,11 @@ default_models = TMLE.default_models(
   # For the estimation of E[Y|W, T]: binary target
   Q_binary = Stack(
     metalearner        = LogisticClassifier(lambda=0., fit_intercept=false),
-    resampling         = StratifiedCV(nfolds=3),
+    resampling         = resampling,
     cache              = false,
     glmnet             = Pipeline(
       RestrictedInteractionTransformer(order=2, primary_variables_patterns=[r"^rs[0-9]+"]),
-      GLMNetClassifier(resampling=StratifiedCV(nfolds=3)),
+      GLMNetClassifier(resampling=resampling),
       cache = false
     ),
     lr                 = Pipeline(
@@ -46,7 +47,7 @@ default_models = TMLE.default_models(
     ),
     tuned_xgboost      = TunedModel(
         model = xgboost_classifier,
-        resampling = StratifiedCV(nfolds=3),
+        resampling = resampling,
         tuning = Grid(goal=20),
         range = [
             range(xgboost_classifier, :max_depth, lower=3, upper=7), 
@@ -54,18 +55,18 @@ default_models = TMLE.default_models(
             ],
         measure = log_loss,
         cache=false
-        )
+    )
   ),
   # For the estimation of p(T| W)
   G = Stack(
     metalearner        = LogisticClassifier(lambda=0., fit_intercept=false),
-    resampling         = StratifiedCV(nfolds=3),
+    resampling         = resampling,
     cache              = false,
-    glmnet             = GLMNetClassifier(),
+    glmnet             = GLMNetClassifier(resampling=resampling),
     lr                 = LogisticClassifier(lambda=0.),
     tuned_xgboost      = TunedModel(
         model = xgboost_classifier,
-        resampling = StratifiedCV(nfolds=3),
+        resampling = resampling,
         tuning = Grid(goal=20),
         range = [
             range(xgboost_classifier, :max_depth, lower=3, upper=7), 
@@ -78,5 +79,7 @@ default_models = TMLE.default_models(
 )
 
 ESTIMATORS = (
-  TMLE = TMLEE(models=default_models, weighted=true, ps_lowerbound=1e-8),
+  CV_wTMLE_SL = TMLEE(models=default_models, weighted=true, resampling=resampling),
+  CV_TMLE_SL = TMLEE(models=default_models, weighted=false, resampling=resampling),
+  CV_OSE_SL = OSE(models=default_models, resampling=resampling)
 )

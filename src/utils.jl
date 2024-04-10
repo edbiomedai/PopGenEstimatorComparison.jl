@@ -126,14 +126,31 @@ end
 
 read_df_result(file) = jldopen(io -> io["results"], file)
 
-read_df_results(outfiles...) = reduce(vcat, read_df_result(f) for f in outfiles)
-
 function save_aggregated_df_results(input_prefix, out)
     dir = dirname(input_prefix)
     dir = dir !== "" ? dir : "."
     baseprefix = basename(input_prefix)
-    results = reduce(vcat, read_df_result(joinpath(dir, file)) for file in readdir(dir) if startswith(file, baseprefix))
-    jldsave(out, results=results)
+    results_dict = Dict()
+    for file in readdir(dir)
+        if startswith(file, baseprefix)
+            io = jldopen(joinpath(dir, file))
+            estimators = io["estimators"]
+            results = io["results"]
+            sample_size = io["sample_size"]
+            if haskey(results_dict, estimators)
+                estimators_dict = results_dict[estimators]
+                if haskey(estimators_dict, sample_size)
+                    estimators_dict[sample_size] = vcat(estimators_dict[sample_size], results)
+                else
+                    estimators_dict[sample_size] = results
+                end
+            else
+                results_dict[estimators] = Dict(sample_size => results)
+            end
+            close(io)
+        end
+    end
+    jldsave(out, results=results_dict)
 end
 
 ########################################################################

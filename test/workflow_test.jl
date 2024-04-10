@@ -4,6 +4,7 @@ using Test
 using JLD2
 using TargetedEstimation
 using TMLE
+using DataFrames
 
 @testset "Test Workflow" begin
     # For some reason if Julia is installed with juliaup on MacOS, the executable is not in ENV["PATH"]
@@ -13,25 +14,38 @@ using TMLE
         "PATH" => ENV["PATH"] * ":" * Sys.BINDIR
     ))
     @test r.exitcode == 0
+    # 2 estimator files: 2 top level entries in the results dict
+    # 2 sample sizes: 2 sub entries in each top level entry
+    # 4 Estimands, 1 random seed, 2 repeats = 8 lines per dataframe
+    expected_unique_random_seeds_repeats = DataFrame(
+        REPEAT_ID = [1, 2],
+        RNG_SEED  = [0, 0]
+    )
+    for file in (joinpath("results", "from_densities_results.hdf5"), joinpath("results", "permutation_results.hdf5"))
+        jldopen(file) do io
+            results = io["results"]
+            # Top level entry 1: two sub entries
+            glmnet_100 = results[(:wTMLE_GLMNET, :TMLE_GLMNET, :OSE_GLMNET)][100]
+            @test size(glmnet_100) == (8, 5)
+            @test sort(unique(glmnet_100[!, [:REPEAT_ID, :RNG_SEED]])) == expected_unique_random_seeds_repeats
+            @test count(x -> x isa TMLE.Estimate, glmnet_100.TMLE_GLMNET) >= 4
 
-    jldopen(joinpath("results", "permutation_results.hdf5")) do io
-        results = io["results"]
-        @test size(results) == (16, 5)
-        @test Set(results.REPEAT_ID) == Set([1, 2])
-        @test Set(results.SAMPLE_SIZE) == Set([100, 200])
-        @test Set(results.RNG_SEED) == Set([0])
-        # non regression
-        @test count(x -> x isa TMLE.Estimate, results.TMLE) > 5
-    end
+            glmnet_200 = results[(:wTMLE_GLMNET, :TMLE_GLMNET, :OSE_GLMNET)][200]
+            @test size(glmnet_200) == (8, 5)
+            @test sort(unique(glmnet_200[!, [:REPEAT_ID, :RNG_SEED]])) == expected_unique_random_seeds_repeats
+            @test count(x -> x isa TMLE.Estimate, glmnet_200.TMLE_GLMNET) >= 4
 
-    jldopen(joinpath("results", "from_densities_results.hdf5")) do io
-        results = io["results"]
-        @test size(results) == (16, 5)
-        @test Set(results.REPEAT_ID) == Set([1, 2])
-        @test Set(results.SAMPLE_SIZE) == Set([100, 200])
-        @test Set(results.RNG_SEED) == Set([0])
-        # non regression
-        @test count(x -> x isa TMLE.Estimate, results.TMLE) > 5
+            # Top level entry 2: two sub entries
+            xgboost_100 = results[(:wTMLE_XGBOOST, :TMLE_XGBOOST, :OSE_XGBOOST)][100]
+            @test size(xgboost_100) == (8, 5)
+            @test sort(unique(xgboost_100[!, [:REPEAT_ID, :RNG_SEED]])) == expected_unique_random_seeds_repeats
+            @test count(x -> x isa TMLE.Estimate, xgboost_100.TMLE_XGBOOST) >= 4
+
+            xgboost_200 = results[(:wTMLE_XGBOOST, :TMLE_XGBOOST, :OSE_XGBOOST)][200]
+            @test size(xgboost_200) == (8, 5)
+            @test sort(unique(xgboost_200[!, [:REPEAT_ID, :RNG_SEED]])) == expected_unique_random_seeds_repeats
+            @test count(x -> x isa TMLE.Estimate, xgboost_200.TMLE_XGBOOST) >= 4
+        end
     end
 end
 

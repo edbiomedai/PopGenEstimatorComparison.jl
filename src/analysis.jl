@@ -8,6 +8,43 @@ covers(Ψ̂::TMLE.ComposedEstimate, Ψ₀; alpha=0.05) =
 
 mean_coverage(estimates, Ψ₀) = mean(covers(Ψ̂, Ψ₀) for Ψ̂ in estimates)
 
+function update_results_1d!(results, indices, Ψ̂::TMLE.ComposedEstimate, index)
+    append!(results, Ψ̂.estimates)
+    append!(indices, [index for _ in 1:length(Ψ̂.estimates)])
+end
+
+function update_results_1d!(results, indices, Ψ̂::TMLE.Estimate, index)
+    push!(results, Ψ̂)
+    push!(indices, index)
+end
+
+update_results_1d!(results, indices, Ψ̂::TargetedEstimation.FailedEstimate, index) = nothing
+
+function single_dimensional_statistics(estimation_results)
+    # An entry of the nested dictionary is characterized by estimators and sample_size
+    estimator_columns = (:TMLE,)
+    
+    sample_size = 450_000
+
+    estimation_results.INDEX = collect(1:nrow(estimation_results))
+    
+
+    one_dimensional_results = select(estimation_results, [:INDEX, :REPEAT_ID, :RNG_SEED])
+    for estimator in estimator_columns
+        estimator_results_1d = []
+        indices = Int64[]
+        for (index, Ψ̂) in zip(estimation_results.INDEX, estimation_results[!, estimator])
+            update_results_1d!(estimator_results_1d, indices, Ψ̂, index)
+        end
+        estimator_results_1d = DataFrame([estimator_results_1d, indices], [estimator, :INDEX])
+        one_dimensional_results = innerjoin(one_dimensional_results, estimator_results_1d; on=:INDEX)
+    end
+    one_dimensional_results[!, :ESTIMAND] = [x.estimand for x in one_dimensional_results[!, first(estimator_columns)]]
+    select!(one_dimensional_results, Not(:INDEX))
+
+    ## Group by Estimand
+end
+
 function analysis(
     estimation_results_file, 
     dataset_file;

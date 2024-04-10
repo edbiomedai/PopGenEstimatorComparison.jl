@@ -30,7 +30,7 @@ function estimate_from_simulated_data(
         outfilename = repeat_filename(workdir, repeat_id)
         outputs = TargetedEstimation.Outputs(hdf5=TargetedEstimation.HDF5Output(filename=outfilename))
         sampled_dataset = sample_from(sampler, origin_dataset; n=sample_size)
-        append!(statistics, compute_statistics(sampled_dataset, estimands))
+        push!(statistics, compute_statistics(sampled_dataset, estimands))
         runner = Runner(
             sampled_dataset;
             estimands_config=estimands_config, 
@@ -45,9 +45,12 @@ function estimate_from_simulated_data(
     end
 
     results = PopGenEstimatorComparison.read_results_dir(workdir)
-    results.SAMPLE_SIZE .= sample_size
     results.RNG_SEED .= rng_seed
-    results.STATISTICS .= statistics
 
-    jldsave(out, results=results, statistics_by_repeat_id=statistics)
+    jldsave(out, 
+        results=results, 
+        statistics_by_repeat_id=statistics, 
+        sample_size=sample_size,
+        estimators=keys(estimators_spec)
+    )
 end
