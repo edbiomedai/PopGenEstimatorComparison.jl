@@ -24,7 +24,7 @@ stages:
             - assets/estimands/estimands.jls
     simulation:
         wdir: simulation
-        cmd: nextflow run ../main.nf -resume -profile eddie -N s2042526@ed.ac.uk
+        cmd: nextflow run ../main.nf -resume -with-trace -profile eddie -N s2042526@ed.ac.uk
         deps:
             - ../dataset/results/dataset.arrow
             - ../assets/estimands/estimands.jls

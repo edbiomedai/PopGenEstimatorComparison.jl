@@ -60,6 +60,7 @@ ESTIMATORS = "assets/estimators-configs/*"
 Then, the pipeline runs a simulation study by bootstraping the estimation process. That is, a new simulated dataset is resampled a number of times according to the `PERMUTATION_ESTIMATION` or `DENSITY_ESTIMATION` strategy. The number of bootstrap samples is determined by the 2 following parameters:
 
 N_REPEATS = 100
+
 RNGS = [0, 1]
 
 The number of bootstrap samples is `N_REPEATS*size(RNGS)` (in this case: 200). This is because `N_REPEATS` controls the number of times the dataset is resampled within the same Nextflow process while `RNGS` control the random seed of the process. The reason why it is designed that way is to maximise HPC platforms usage.  In this simple example, one process will run 100 repeats with a random seed of 0 and an other one with a random seed of 1.
