@@ -1,6 +1,33 @@
 include { JuliaCmd; LongestPrefix } from '../modules/functions.nf'
 include { AggregateResults } from '../modules/aggregate.nf'
 
+process Analyse {
+    label 'bigmem'
+    publishDir "${params.OUTDIR}/density_estimation", mode: 'symlink'
+
+    input:
+        path results_file
+        path estimands_files
+        path dataset_file
+        path density_estimates_files
+        
+    output:
+        path "analysis/analysis1D/summary_stats.hdf5"
+
+    script:
+        estimands_prefix = LongestPrefix(estimands_files)
+        density_estimates_prefix = LongestPrefix(density_estimates_files)
+        """
+        ${JuliaCmd()} analyse \
+            ${results_file} \
+            ${estimands_prefix} \
+            --out-dir=analysis \
+            --n=${params.N_FOR_TRUTH} \
+            --dataset-file=${dataset_file} \
+            --density-estimates-prefix=${density_estimates_prefix}
+        """
+}
+
 process DensityEstimationInputs {
     publishDir "${params.OUTDIR}/density_estimation/conditional_densities", mode: 'symlink', pattern: "*.json"
     publishDir "${params.OUTDIR}/density_estimation/estimands", mode: 'symlink', pattern: "*.jls"
@@ -85,9 +112,11 @@ workflow DENSITY_ESTIMATION {
     density_estimators = Channel.value(file(params.DENSITY_ESTIMATORS, checkIfExists: true))
     sample_sizes = Channel.fromList(params.SAMPLE_SIZES)
     rngs = Channel.fromList(params.RNGS)
-
+    
+    // Density Estimation Inputs
     de_inputs = DensityEstimationInputs(dataset, estimands.collect())
 
+    // Density Estimation
     density_estimates = DensityEstimation(
         dataset,
         de_inputs.conditional_densities.flatten(),
@@ -107,10 +136,22 @@ workflow DENSITY_ESTIMATION {
         .map { [it[0][1], it[1][1]] }
 
     combined = estimators.combine(densities_with_estimand).combine(sample_sizes).combine(rngs)
-        
+    
+    // Estimation
     estimates = EstimationFromDensityEstimates(
         dataset,
         combined
     )
+
+    // Aggregation of Estimation Results
     AggregateResults(estimates.collect(), "from_densities_results.hdf5")
+    
+    // Analysis
+    Analyse(
+        AggregateResults.out, 
+        estimands.collect(),
+        dataset,
+        density_estimates.collect()
+
+    )
 }

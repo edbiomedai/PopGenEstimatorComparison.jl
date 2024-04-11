@@ -8,6 +8,7 @@ params.N_REPEATS = 100
 params.RNGS = [0]
 params.TRAIN_RATIO = 10
 params.DENSITY_ESTIMATORS = "assets/density_estimators.jl"
+params.N_FOR_TRUTH = 500000
 
 include { PERMUTATION_ESTIMATION } from './workflows/permutation.nf'
 include { DENSITY_ESTIMATION } from './workflows/density_estimation.nf'

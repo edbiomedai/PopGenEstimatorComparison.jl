@@ -76,22 +76,21 @@ stages:
       md5: 51e0148aeeda431c533c4b0ec8778257
       size: 32061
   simulation:
-    cmd: nextflow run ../main.nf -resume -profile eddie -with-trace -with-report -N
-      s2042526@ed.ac.uk
+    cmd: nextflow run ../main.nf -resume -profile eddie -N s2042526@ed.ac.uk
     deps:
-    - path: ../assets/estimands/rs1421085_ATEs.jls
-      md5: 62d49ce8a0e228ab3b6fb3592567398a
-      size: 2018
+    - path: ../assets/estimands/estimands.jls
+      md5: 51e0148aeeda431c533c4b0ec8778257
+      size: 32061
     - path: ../dataset/results/dataset.arrow
-      md5: c78dcb879c2111ecaf9b609be01486dc
-      size: 542735842
+      md5: ffece6148c4debe75dd634e17d9c65b3
+      size: 124029586
     - path: nextflow.config
-      md5: ee2db088b50097d20f2171dad9a1dbb5
-      size: 306
+      md5: cf8c1be881167ce59333bc40a946f2d6
+      size: 374
     outs:
     - path: results/from_densities_results.hdf5
-      md5: e1fd42dad82de1d02ff1aab51a394b47
-      size: 1608255
+      md5: 6ba4cb2e3f2d78c2bd67c6d250539c17
+      size: 968531471
     - path: results/permutation_results.hdf5
-      md5: 5887c99e51a77bd50d19051e9b0936f0
-      size: 1608301
+      md5: 6109fdf669ef9f57498f5dc3f738022e
+      size: 940881821

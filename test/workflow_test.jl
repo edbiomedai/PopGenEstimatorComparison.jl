@@ -14,9 +14,10 @@ using DataFrames
         "PATH" => ENV["PATH"] * ":" * Sys.BINDIR
     ))
     @test r.exitcode == 0
-    # 2 estimator files: 2 top level entries in the results dict
-    # 2 sample sizes: 2 sub entries in each top level entry
-    # 4 Estimands, 1 random seed, 2 repeats = 8 lines per dataframe
+    # Check the Aggregated Results Files 
+    ## 2 estimator files: 2 top level entries in the results dict
+    ## 2 sample sizes: 2 sub entries in each top level entry
+    ## 4 Estimands, 1 random seed, 2 repeats = 8 lines per dataframe
     expected_unique_random_seeds_repeats = DataFrame(
         REPEAT_ID = [1, 2],
         RNG_SEED  = [0, 0]
@@ -46,6 +47,15 @@ using DataFrames
             @test sort(unique(xgboost_200[!, [:REPEAT_ID, :RNG_SEED]])) == expected_unique_random_seeds_repeats
             @test count(x -> x isa TMLE.Estimate, xgboost_200.TMLE_XGBOOST) >= 4
         end
+    end
+
+    # Check the Analysis Output
+    for file in (
+        joinpath("results", "density_estimation", "analysis", "analysis1D", "summary_stats.hdf5"),
+        joinpath("results", "permutation_estimation", "analysis", "analysis1D", "summary_stats.hdf5") 
+        )
+        results = jldopen(io -> io["results"], file)
+        @test names(results) == ["ESTIMAND", "ESTIMATOR", "SAMPLE_SIZE", "BIAS", "VARIANCE", "MSE", "COVERAGE", "CI_WIDTH"]
     end
 end
 

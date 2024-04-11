@@ -1,5 +1,26 @@
-include { JuliaCmd } from '../modules/functions.nf'
+include { JuliaCmd; LongestPrefix } from '../modules/functions.nf'
 include { AggregateResults } from '../modules/aggregate.nf'
+
+process Analyse {
+    label 'bigmem'
+    publishDir "${params.OUTDIR}/permutation_estimation", mode: 'symlink'
+
+    input:
+        path results_file
+        path estimands_files 
+        
+    output:
+        path "analysis/analysis1D/summary_stats.hdf5"
+
+    script:
+        estimands_prefix = LongestPrefix(estimands_files)
+        """
+        ${JuliaCmd()} analyse \
+            ${results_file} \
+            ${estimands_prefix} \
+            --out-dir=analysis
+        """
+}
 
 process PermutationEstimation {
     label 'bigmem'
@@ -37,6 +58,12 @@ workflow PERMUTATION_ESTIMATION {
     rngs = Channel.fromList(params.RNGS)
     combined = estimators.combine(estimands).combine(sample_sizes).combine(rngs)
 
+    // Estimation
     permutation_results = PermutationEstimation(origin_dataset, combined)
+
+    // Aggregation of Estimation Results
     AggregateResults(permutation_results.collect(), "permutation_results.hdf5")
+    
+    // Analysis
+    Analyse(AggregateResults.out, estimands.collect())
 }
