@@ -19,6 +19,7 @@ using Arrow
 using ArgParse
 using JSON
 using Serialization
+using Makie
 
 include("utils.jl")
 

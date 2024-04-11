@@ -170,7 +170,9 @@ include(joinpath(TESTDIR, "testutils.jl"))
     PopGenEstimatorComparison.julia_main()
     analysis_results = jldopen(io -> io["results"], joinpath(analysis_outdir, "analysis1D", "summary_stats.hdf5"))
     @test names(analysis_results) == ["ESTIMAND", "ESTIMATOR", "SAMPLE_SIZE", "BIAS", "VARIANCE", "MSE", "COVERAGE", "CI_WIDTH"]
+    @test isfile(joinpath(analysis_outdir, "density_estimation.png"))
 end
+
 
 end
 

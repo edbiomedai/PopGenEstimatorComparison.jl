@@ -196,6 +196,71 @@ function analysis1D(results, true_effects, out_dir_1D)
     jldsave(joinpath(out_dir_1D, "summary_stats.hdf5"), results=summary_statistics)
 end
 
+function density_loss_subplot!(ax, loss_table, loss_column, colors)
+    barplot!(ax,
+        loss_table.DISTRIBUTION_ID, 
+        loss_table[!, loss_column],
+        dodge = loss_table.ESTIMATOR_ID,
+        color = colors[loss_table.ESTIMATOR_ID],
+        # bar_labels = :y,
+        # color_over_background=:black,
+        # color_over_bar=:white,
+        # flip_labels_at=0.85,
+        direction=:x,
+    )
+end
+
+function density_loss_plot(loss_table, distributions_labels, estimator_labels)
+    colors = Makie.wong_colors()
+    fig = Figure()
+    yticks = (1:length(distributions_labels), distributions_labels)
+    # Test Loss
+    ax1 = Axis(fig[1, 1], title="Test Set", ylabel="Density", xlabel="Loss", yticks=yticks)
+    density_loss_subplot!(ax1, loss_table, :TEST_LOSS, colors)
+    # Train Loss
+    ax2 = Axis(fig[1, 2], title="Train Set", ylabel="Density", xlabel="Loss", yticks=yticks)
+    density_loss_subplot!(ax2, loss_table, :TRAIN_LOSS, colors)
+    # Legend
+    elements = [PolyElement(polycolor = colors[i]) for i in 1:length(estimator_labels)]
+    Legend(fig[2,:], elements, estimator_labels, "Estimators",
+        orientation = :horizontal, tellwidth = false, tellheight = true)
+    return fig
+end
+
+function get_density_loss_info(density_estimates_prefix)
+    loss_table = DataFrame()
+    distributions_labels = []
+    estimator_labels = []
+    for (distribution_id, file) in enumerate(files_matching_prefix(density_estimates_prefix))
+        jldopen(file) do io
+            push!(distributions_labels, string(io["outcome"]))
+            distribution = string(io["outcome"], "|", join(io["parents"], ","))
+            losses = io["metrics"]
+            estimators = [string(typeof(x)) for x in io["estimators"]]
+            isempty(estimator_labels) && append!(estimator_labels, estimators)
+            for (estimator_id, (estimator, losses)) in enumerate(zip(estimators, losses))
+                row = (
+                    DISTRIBUTION_ID = distribution_id, 
+                    DISTRIBUTION = distribution,
+                    ESTIMATOR_ID = estimator_id,
+                    ESTIMATOR = estimator,
+                    TEST_LOSS = losses.test_loss,
+                    TRAIN_LOSS = losses.train_loss)
+                push!(loss_table, row)
+            end
+        end
+    end
+    return loss_table, distributions_labels, estimator_labels
+end
+
+function density_estimation_analysis(density_estimates_prefix, outdir)
+    loss_table, distributions_labels, estimator_labels = get_density_loss_info(density_estimates_prefix)
+    density_fig = density_loss_plot(loss_table, distributions_labels, estimator_labels)
+    save(joinpath(outdir, "density_estimation.png"), density_fig)
+end
+
+density_estimation_analysis(density_estimates_prefix::Nothing, outdir) = nothing
+
 function analyse(
     results_file,
     estimands_prefix;
@@ -206,6 +271,8 @@ function analyse(
     )
     isdir(out_dir) || mkdir(out_dir)
     origin_dataset = dataset_file !== nothing ? TargetedEstimation.instantiate_dataset(dataset_file) : nothing
+    # Density Estimates Analyses (if density_estimates_prefix !== nothing)
+    density_estimation_analysis(density_estimates_prefix, out_dir)
     # Analysis of 1-dimensional effects
     out_dir_1D = joinpath(out_dir, "analysis1D")
     isdir(out_dir_1D) || mkdir(out_dir_1D)
