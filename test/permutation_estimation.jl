@@ -99,14 +99,14 @@ include(joinpath(TESTDIR, "testutils.jl"))
         @test size(io["results"]) == (4, 5)
     end
     # Aggregate the 3 runs
-    out = joinpath(outdir, "permutation_results.hdf5")
+    results_file = joinpath(outdir, "permutation_results.hdf5")
     copy!(ARGS, [
         "aggregate",
         joinpath(outdir, "permutation_results"),
-        out,
+        results_file,
     ])
     PopGenEstimatorComparison.julia_main()
-    jldopen(out) do io
+    jldopen(results_file) do io
         results = io["results"]
         run_1 = results[(:wTMLE_GLMNET, :TMLE_GLMNET, :OSE_GLMNET)][100]
         @test names(run_1) == ["wTMLE_GLMNET", "TMLE_GLMNET", "OSE_GLMNET", "REPEAT_ID", "RNG_SEED"]
@@ -120,16 +120,16 @@ include(joinpath(TESTDIR, "testutils.jl"))
         @test run_2_3.RNG_SEED ==[1, 1, 1, 1, 2, 2, 2, 2]
     end
     # Analyse results
-    results_file = out
-    estimands_prefix = joinpath(TESTDIR, "assets", "estimands", "estimands_ates.jls")
-    density_estimates_prefix = nothing
-    n = 500_000
+    out_dir = mktempdir()
     copy!(ARGS, [
         "analyse",
-        joinpath(outdir, "permutation_results"),
-        out,
+        results_file,
+        joinpath(TESTDIR, "assets", "estimands", "estimands_ates.jls"),
+        string("--out-dir=", out_dir)
     ])
-
+    PopGenEstimatorComparison.julia_main()
+    analysis_results = jldopen(io -> io["results"], joinpath(out_dir, "analysis1D", "summary_stats.hdf5"))
+    @test names(analysis_results) == ["ESTIMAND", "ESTIMATOR", "SAMPLE_SIZE", "BIAS", "VARIANCE", "MSE", "COVERAGE", "CI_WIDTH"]
 end
 
 end

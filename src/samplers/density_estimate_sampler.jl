@@ -76,7 +76,7 @@ function monte_carlo_effect(Ψ, sampler, dataset)
     return mean(ctf_agg)
 end
 
-function true_effect(Ψ, sampler::DensityEstimateSampler, origin_dataset;n=500_000)
+function true_effect(Ψ, sampler::DensityEstimateSampler, origin_dataset; n=500_000)
     sampled_dataset = sample_from(sampler, origin_dataset; n=n)
     return monte_carlo_effect(Ψ, sampler, sampled_dataset)
 end

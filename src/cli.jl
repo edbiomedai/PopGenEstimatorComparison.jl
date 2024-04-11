@@ -27,10 +27,31 @@ function cli_settings()
         "results-file"
             arg_type = String
             help = "Aggregated result file output by the `aggregate` command."
-            
-        "--out-prefix"
+        
+        "estimands-prefix"
             arg_type = String
-            help = "Output prefix, will be infered from the input file by default."
+            help = "Prefix to estimands files."
+
+        "--out-dir"
+            arg_type = String
+            default = "analysis_results"
+            help = "Output directory."
+        
+        "--n"
+            arg_type = Int
+            default = 500_000
+            help = "Number of samples used to compute the ground truth value of the estimands."
+        
+        "--dataset-file"
+            arg_type = String
+            help = "Dataset file to use to sample data and compute ground truth values (if --density_estimates_prefix is specified)."
+
+        "--density-estimates-prefix"
+            arg_type = String
+            help = string("If specified, a prefix to density estimates. ",
+                    "It is thus assumed that the results-file was generated using these densities. ", 
+                    "If left unspecified, the NullSampler is used and all effects are assumed to be 0.")
+
     end
 
     @add_arg_table! s["aggregate"] begin
@@ -183,6 +204,15 @@ function julia_main()::Cint
             output=cmd_settings["output"],
             train_ratio=cmd_settings["train-ratio"],
             verbosity=cmd_settings["verbosity"]
+        )
+    elseif cmd == "analyse"
+        analyse(
+            cmd_settings["results-file"],
+            cmd_settings["estimands-prefix"];
+            out_dir=cmd_settings["out-dir"],
+            n=cmd_settings["n"],
+            dataset_file=cmd_settings["dataset-file"],
+            density_estimates_prefix=cmd_settings["density-estimates-prefix"],
         )
     end
 

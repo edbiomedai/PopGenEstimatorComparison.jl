@@ -4,6 +4,7 @@ using Test
 TESTDIR = joinpath(pkgdir(PopGenEstimatorComparison), "test")
 
 @testset "PopGenEstimatorComparison.jl" begin
+    # Unit Tests
     @test include(joinpath(TESTDIR, "utils.jl"))
     
     @test include(joinpath(TESTDIR, "density_estimation", "glm.jl"))
@@ -13,7 +14,7 @@ TESTDIR = joinpath(pkgdir(PopGenEstimatorComparison), "test")
     @test include(joinpath(TESTDIR, "samplers", "permutation_null_sampler.jl"))
     @test include(joinpath(TESTDIR, "samplers", "density_estimate_sampler.jl"))
 
+    # Integration Tests
     @test include(joinpath(TESTDIR, "permutation_estimation.jl"))
     @test include(joinpath(TESTDIR, "density_estimation.jl"))
-    # @test include(joinpath(TESTDIR, "analysis.jl"))
 end

@@ -40,9 +40,8 @@ export NeuralNetworkEstimator, SieveNeuralNetworkEstimator
 export GLMEstimator
 export sample_from, train!, evaluation_metrics
 export density_estimation, density_estimation_inputs
-export estimate_from_simulated_dataset
 export estimate_from_simulated_data
-export read_df_results, read_df_result
 export save_aggregated_df_results
+export analyse
 
 end

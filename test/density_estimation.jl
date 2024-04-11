@@ -78,10 +78,12 @@ include(joinpath(TESTDIR, "testutils.jl"))
             end
         end
     end
-    # Estimation From Densities
+    # Estimation From Densities 1: glmnet, rng=1
     estimators_config = joinpath(PKGDIR, "assets", "estimators-configs", "vanilla-glmnet.jl")
-    estimands_file = joinpath(de_inputs_dir, "de_group_1_estimands_1.jls")
     outdir = mktempdir()
+    estimands_file = joinpath(de_inputs_dir, "de_group_1_estimands_1.jls")
+    workdir_1 = mktempdir()
+    results_file_1 = joinpath(outdir, "results_1.hdf5")
     copy!(ARGS, [
         "estimation",
         dataset_file,
@@ -89,27 +91,85 @@ include(joinpath(TESTDIR, "testutils.jl"))
         estimators_config,
         "--sample-size=100",
         string("--density-estimates-prefix=", joinpath(density_estimates_dir, "de")),
-        "--n-repeats=1",
-        string("--out=", joinpath(outdir, "results.hdf5")),
+        "--n-repeats=2",
+        string("--out=", results_file_1),
         "--verbosity=0",
         "--rng=1",
         "--chunksize=100",
-        string("--workdir=", outdir)
+        string("--workdir=", workdir_1)
     ])
-
     PopGenEstimatorComparison.julia_main()
-
-    jldopen(joinpath(outdir, "results.hdf5")) do io
+    jldopen(results_file_1) do io
         @test io["estimators"] == (:wTMLE_GLMNET, :TMLE_GLMNET, :OSE_GLMNET)
         # 1 repeat
-        @test length(io["statistics_by_repeat_id"]) == 1
+        @test length(io["statistics_by_repeat_id"]) == 2
         @test io["sample_size"] == 100
         results = io["results"]
-        @test results.REPEAT_ID == [1, 1]
-        @test results.RNG_SEED == [1, 1]
-        # At least one success
-        @test count(x -> x isa TMLE.Estimate, results.TMLE_GLMNET) > 0
+        @test results.REPEAT_ID == [1, 1, 2, 2]
+        @test results.RNG_SEED == [1, 1, 1, 1]
+        # At least 2 successes
+        @test count(x -> x isa TMLE.Estimate, results.TMLE_GLMNET) > 2
     end
+    # Estimation From Densities 2: glmnet, rng=2
+    workdir_2 = mktempdir()
+    results_file_2 = joinpath(outdir, "results_2.hdf5")
+    copy!(ARGS, [
+        "estimation",
+        dataset_file,
+        estimands_file,
+        estimators_config,
+        "--sample-size=100",
+        string("--density-estimates-prefix=", joinpath(density_estimates_dir, "de")),
+        "--n-repeats=2",
+        string("--out=", results_file_2),
+        "--verbosity=0",
+        "--rng=2",
+        "--chunksize=100",
+        string("--workdir=", workdir_2)
+    ])
+    PopGenEstimatorComparison.julia_main()
+    jldopen(results_file_2) do io
+        @test io["estimators"] == (:wTMLE_GLMNET, :TMLE_GLMNET, :OSE_GLMNET)
+        # 1 repeat
+        @test length(io["statistics_by_repeat_id"]) == 2
+        @test io["sample_size"] == 100
+        results = io["results"]
+        @test results.REPEAT_ID == [1, 1, 2, 2]
+        @test results.RNG_SEED == [2, 2, 2, 2]
+        # At least 2 successes
+        @test count(x -> x isa TMLE.Estimate, results.TMLE_GLMNET) > 2
+    end
+    # Aggregate
+    results_file = joinpath(outdir, "from_densities_results.hdf5")
+    copy!(ARGS, [
+        "aggregate",
+        joinpath(outdir, "results"),
+        results_file,
+    ])
+    PopGenEstimatorComparison.julia_main()
+    jldopen(results_file) do io
+        results = io["results"]
+        run_100 = results[(:wTMLE_GLMNET, :TMLE_GLMNET, :OSE_GLMNET)][100]
+        @test names(run_100) == ["wTMLE_GLMNET", "TMLE_GLMNET", "OSE_GLMNET", "REPEAT_ID", "RNG_SEED"]
+        @test size(run_100) == (8, 5)
+        @test run_100.REPEAT_ID == [1, 1, 2, 2, 1, 1, 2, 2]
+        @test run_100.RNG_SEED ==[1, 1, 1, 1, 2, 2, 2, 2]
+    end
+    # Analysis
+    analysis_outdir = mktempdir()
+    copy!(ARGS, [
+        "analyse",
+        results_file,
+        estimands_prefix,
+        string("--out-dir=", analysis_outdir),
+        string("--n=", 100_000),
+        string("--dataset-file=", dataset_file),
+        string("--density-estimates-prefix=", joinpath(density_estimates_dir, "de_group")),
+
+    ])
+    PopGenEstimatorComparison.julia_main()
+    analysis_results = jldopen(io -> io["results"], joinpath(analysis_outdir, "analysis1D", "summary_stats.hdf5"))
+    @test names(analysis_results) == ["ESTIMAND", "ESTIMATOR", "SAMPLE_SIZE", "BIAS", "VARIANCE", "MSE", "COVERAGE", "CI_WIDTH"]
 end
 
 end

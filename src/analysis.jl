@@ -189,21 +189,28 @@ function estimands_by_sample_size_plots(summary_statistics)
     end
 end
 
-function one_dimensional_analysis(results, true_effects)
+function analysis1D(results, true_effects, out_dir_1D)
     results1D = PopGenEstimatorComparison.unpack_results1D(results)
-    true_effects1D = PopGenEstimatorComparison.unpack_true_effects1D(true_effects)
-    summary_statistics = PopGenEstimatorComparison.collect_summary_statistics(results1D, true_effects1D)
+    true_effects1D = unpack_true_effects1D(true_effects)
+    summary_statistics = collect_summary_statistics(results1D, true_effects1D)
+    jldsave(joinpath(out_dir_1D, "summary_stats.hdf5"), results=summary_statistics)
 end
 
-function analysis(
+function analyse(
     results_file,
     estimands_prefix;
+    out_dir="analysis_results",
     n=500_000,
     dataset_file=nothing,
     density_estimates_prefix=nothing
     )
+    isdir(out_dir) || mkdir(out_dir)
+    origin_dataset = dataset_file !== nothing ? TargetedEstimation.instantiate_dataset(dataset_file) : nothing
+    # Analysis of 1-dimensional effects
+    out_dir_1D = joinpath(out_dir, "analysis1D")
+    isdir(out_dir_1D) || mkdir(out_dir_1D)
     results = jldopen(io -> io["results"], results_file)
-    true_effects = PopGenEstimatorComparison.get_true_effect_sizes(estimands_prefix, density_estimates_prefix, dataset_file; n=n)
-    one_dimensional_analysis(results, true_effects)
-
+    true_effects = PopGenEstimatorComparison.get_true_effect_sizes(estimands_prefix, density_estimates_prefix, origin_dataset; n=n)
+    PopGenEstimatorComparison.analysis1D(results, true_effects, out_dir_1D)
+    # Analysis of multi-dimensional effects
 end

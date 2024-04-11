@@ -137,8 +137,6 @@ function read_results_dir(outdir)
     return DataFrame(results)
 end
 
-read_df_result(file) = jldopen(io -> io["results"], file)
-
 function save_aggregated_df_results(input_prefix, out)
     dir = dirname(input_prefix)
     dir = dir !== "" ? dir : "."
