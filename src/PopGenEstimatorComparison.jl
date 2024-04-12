@@ -20,6 +20,7 @@ using ArgParse
 using JSON
 using Serialization
 using Makie
+using CairoMakie
 
 include("utils.jl")
 

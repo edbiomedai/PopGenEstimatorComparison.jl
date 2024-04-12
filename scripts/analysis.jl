@@ -2,6 +2,8 @@ using CairoMakie
 using DataFrames
 using PopGenEstimatorComparison
 using JLD2
+using TargetedEstimation
+using HypothesisTests
 
 """
 This functions assumes that the losses contained in the density estimates files are indexed by:
@@ -88,12 +90,36 @@ function density_estimates_barplots(outdir, density_estimates_prefix)
     save(joinpath(outdir, "propensity_scores_de_train_performance.png"), fig)
 end
 
+function KSTest_plots(dataset, density_estimates_prefix, outdir)
+    for file in PopGenEstimatorComparison.files_matching_prefix(density_estimates_prefix)
+        jldopen(file) do io
+            outcome = io["outcome"]
+            parents = io["parents"]
+            variables = [outcome, parents...]
+            nomissing_dataset = dropmissing(DataFrames.select(dataset, variables), variables)
+            TargetedEstimation.coerce_types!(nomissing_dataset, [outcome, parents...])
+            X = DataFrames.select(nomissing_dataset, parents)
+            y = nomissing_dataset[!, outcome]
+            density_estimate = io["best-estimator"]
+            y_sampled = sample_from(
+                density_estimate.neural_net_estimator.model, 
+                PopGenEstimatorComparison.transpose_table(density_estimate.neural_net_estimator, X),
+                density_estimate.neural_net_estimator.labels
+            )
+        end
+    end
+end
+
 function main(;
-    outdir="outputs", 
-    density_estimates_prefix="simulation/results/density_estimation/density_estimates/de"
+    outdir="outputs",
+    dataset_file=joinpath("dataset", "results", "dataset.arrow"),
+    density_estimates_prefix=joinpath("simulation", "results", "density_estimation", "density_estimates/de")
     )
     isdir(outdir) || mkdir(outdir)
+    dataset = TargetedEstimation.instantiate_dataset(dataset_file)
+    # Density Estimates analysis
     density_estimates_barplots(outdir, density_estimates_prefix)
+    # KSTest_plots(dataset, density_estimates_prefix, outdir)
 end
 
 main()
