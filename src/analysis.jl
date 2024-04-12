@@ -210,15 +210,21 @@ function density_loss_subplot!(ax, loss_table, loss_column, colors)
     )
 end
 
-function density_loss_plot(loss_table, distributions_labels, estimator_labels)
+function density_loss_plot!(loss_table)
+    sort!(loss_table, :TEST_LOSS)
+    loss_table.DISTRIBUTION_ID = 1:nrow(loss_table)
+    distributions_labels = loss_table.DISTRIBUTION
+
+    estimator_labels = sort(unique(loss_table, [:ESTIMATOR_ID, :ESTIMATOR]), :ESTIMATOR_ID).ESTIMATOR
     colors = Makie.wong_colors()
-    fig = Figure()
+    fig = Figure(size=(1000, 800))
     yticks = (1:length(distributions_labels), distributions_labels)
     # Test Loss
     ax1 = Axis(fig[1, 1], title="Test Set", ylabel="Density", xlabel="Loss", yticks=yticks)
     density_loss_subplot!(ax1, loss_table, :TEST_LOSS, colors)
     # Train Loss
-    ax2 = Axis(fig[1, 2], title="Train Set", ylabel="Density", xlabel="Loss", yticks=yticks)
+    ax2 = Axis(fig[1, 2], title="Train Set", xlabel="Loss", yticklabelsvisible=false, yticksvisible=false)
+    linkxaxes!(ax1, ax2)
     density_loss_subplot!(ax2, loss_table, :TRAIN_LOSS, colors)
     # Legend
     elements = [PolyElement(polycolor = colors[i]) for i in 1:length(estimator_labels)]
@@ -229,34 +235,61 @@ end
 
 function get_density_loss_info(density_estimates_prefix)
     loss_table = DataFrame()
-    distributions_labels = []
-    estimator_labels = []
+    outcome_mean_id = 1
+    propensity_score_id = 1
     for (distribution_id, file) in enumerate(files_matching_prefix(density_estimates_prefix))
         jldopen(file) do io
-            push!(distributions_labels, string(io["outcome"]))
-            distribution = string(io["outcome"], "|", join(io["parents"], ","))
+            outcome = string(io["outcome"])
+            parents = join(io["parents"], ",")
             losses = io["metrics"]
             estimators = [string(typeof(x)) for x in io["estimators"]]
-            isempty(estimator_labels) && append!(estimator_labels, estimators)
+            if occursin(r"^rs[0-9]*", outcome)
+                distribution = outcome
+                type = "Propensity Score"
+                distribution_id = propensity_score_id
+                propensity_score_id += 1
+            else
+                distribution = string(
+                    first(outcome, 10), "... | ", 
+                    join((p for p in string.(io["parents"]) if occursin(r"^rs[0-9]*", p)), ", ")
+                )
+                type = "Outcome Mean"
+                distribution_id = outcome_mean_id
+                outcome_mean_id += 1
+            end
             for (estimator_id, (estimator, losses)) in enumerate(zip(estimators, losses))
                 row = (
                     DISTRIBUTION_ID = distribution_id, 
                     DISTRIBUTION = distribution,
+                    OUTCOME = outcome,
+                    PARENTS = parents,
                     ESTIMATOR_ID = estimator_id,
                     ESTIMATOR = estimator,
                     TEST_LOSS = losses.test_loss,
-                    TRAIN_LOSS = losses.train_loss)
+                    TRAIN_LOSS = losses.train_loss,
+                    TYPE = type,
+                    )
                 push!(loss_table, row)
             end
         end
     end
-    return loss_table, distributions_labels, estimator_labels
+    return loss_table
 end
 
 function density_estimation_analysis(density_estimates_prefix, outdir)
-    loss_table, distributions_labels, estimator_labels = get_density_loss_info(density_estimates_prefix)
-    density_fig = density_loss_plot(loss_table, distributions_labels, estimator_labels)
-    save(joinpath(outdir, "density_estimation.png"), density_fig)
+    loss_table = get_density_loss_info(density_estimates_prefix)
+    # Propensity Scores
+    propensity_scores = filter(x -> x.TYPE == "Propensity Score", loss_table)
+    if nrow(propensity_scores) > 0 
+        propensity_scores_density_fig = density_loss_plot!(propensity_scores)
+        save(joinpath(outdir, "ps_density_estimation.png"), propensity_scores_density_fig)
+    end
+    # Outcome Means
+    outcome_means = filter(x -> x.TYPE == "Outcome Mean", loss_table)
+    if nrow(outcome_means) > 0 
+        outcome_means_density_fig = density_loss_plot!(outcome_means)
+        save(joinpath(outdir, "om_density_estimation.png"), outcome_means_density_fig)
+    end
 end
 
 density_estimation_analysis(density_estimates_prefix::Nothing, outdir) = nothing

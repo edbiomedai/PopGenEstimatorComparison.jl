@@ -11,3 +11,4 @@ trace*
 report*
 temp/
 sandbox.jl
+outputs/
