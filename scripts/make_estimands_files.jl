@@ -2,6 +2,7 @@ using TMLE
 using Arrow
 using DataFrames
 using Serialization
+using PopGenEstimatorComparison
 
 function getTraits()
     return Symbol.([
@@ -41,31 +42,6 @@ function getIATEs(dataset, confounders, outcome_extra_covariates; traits = getTr
     ) 
 end
 
-function variables_from_dataset(dataset)
-    confounders = Set([])
-    outcome_extra_covariates = Set(["Genetic-Sex", "Age-Assessment"])
-    outcomes = Set([])
-    variants = Set([])
-    for colname in names(dataset)
-        if startswith(colname, r"PC[0-9]*")
-            push!(confounders, colname)
-        elseif startswith(colname, r"rs[0-9]*")
-            push!(variants, colname)
-        elseif colname ∈ outcome_extra_covariates
-            continue
-        else
-            push!(outcomes, colname)
-        end
-    end
-    variables = (
-        outcomes = collect(outcomes), 
-        variants = collect(variants), 
-        confounders = collect(confounders), 
-        outcome_extra_covariates = collect(outcome_extra_covariates)
-    )
-    return variables
-end
-
 function main()
     DATASET_FILE = joinpath("dataset", "results", "dataset.arrow")
     DESTINATION_DIR = joinpath("assets", "estimands")
@@ -73,7 +49,7 @@ function main()
     @assert isdir(DESTINATION_DIR)
     dataset = Arrow.Table(DATASET_FILE) |> DataFrame
 
-    variables = variables_from_dataset(dataset)
+    variables = PopGenEstimatorComparison.variables_from_dataset(dataset)
 
     ATEs = getATEs(
         dataset,

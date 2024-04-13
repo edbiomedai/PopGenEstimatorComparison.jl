@@ -1,9 +1,12 @@
+using Makie
 using CairoMakie
 using DataFrames
 using PopGenEstimatorComparison
 using JLD2
 using TargetedEstimation
 using HypothesisTests
+using Serialization
+using TMLE
 
 """
 This functions assumes that the losses contained in the density estimates files are indexed by:
@@ -110,13 +113,95 @@ function KSTest_plots(dataset, density_estimates_prefix, outdir)
     end
 end
 
+function get_genotypes_stats(dataset, variant)
+    stats = sort(DataFrames.combine(groupby(dataset, variant, skipmissing=true), nrow => :FREQ), :FREQ)
+    n = sum(stats.FREQ)
+    maf = if size(stats, 1) == 3
+        (stats.FREQ[1] + stats.FREQ[2]) / 2n 
+    else
+        throw(ArgumentError(string("Can't compute MAF for variant: ", variant)))
+    end
+    stats.FREQ = stats.FREQ/n
+    rename!(stats, variant => :GENOTYPES)
+    stats.VARIANT .= variant
+    stats.MAF .= maf
+    stats.ALLELE_ID = [1, 2, 3]
+
+    return stats
+end
+
+function plot_dataset(dataset, outdir)
+    descriptive_dir = joinpath(outdir, "descriptive")
+    isdir(descriptive_dir) || mkdir(descriptive_dir)
+    variables = PopGenEstimatorComparison.variables_from_dataset(dataset)
+    # Variants
+    variants_stats = DataFrame()
+    for (variant_id, variant) in enumerate(variables.variants)
+        variant_stats = get_genotypes_stats(dataset, variant)
+        variant_stats.VARIANT_ID .= variant_id
+        variants_stats = vcat(variants_stats, variant_stats)
+    end
+
+    colors = Makie.wong_colors()
+    fig = Figure(size=(1000, 700))
+    ax = Axis(fig[1, 1], 
+        title="Variants's Genotypes Frequencies", 
+        xticks=(1:length(variables.variants), variables.variants))
+    barplot!(ax, 
+        variants_stats.VARIANT_ID, 
+        variants_stats.FREQ,
+        color=colors[variants_stats.ALLELE_ID],
+        dodge = variants_stats.ALLELE_ID,
+        bar_labels=variants_stats.GENOTYPES, 
+        color_over_bar=:white,
+    )
+    save(joinpath(descriptive_dir, "variants.png"), fig)
+    # Traits
+    binary_traits = []
+    continuous_traits = []
+    for trait ∈ variables.outcomes
+        if eltype(dataset[!, trait]) <: Union{Bool, Missing}
+            push!(binary_traits, trait)
+        else
+            push!(continuous_traits, trait)
+        end
+    end
+    ncases = [sum(skipmissing(dataset[!, trait])) for trait in binary_traits]
+    ## Binary Traits
+    fig = Figure()
+    ax = Axis(fig[1, 1], 
+        title="Binary Traits",
+        xscale=log10,
+        yticks=(1:length(ncases), binary_traits)
+    )
+    barplot!(ax, 
+        1:length(ncases), 
+        ncases, 
+        bar_labels=:y,
+        flip_labels_at=15000,
+        label_formatter = x-> "$(Int(x))",
+        direction=:x
+    )
+    save(joinpath(descriptive_dir, "binary_traits.png"), fig)
+    ## Continuous Traits
+    for trait in continuous_traits
+        fig = Figure()
+        ax = Axis(fig[1, 1], title=trait)
+        hist!(ax, collect(skipmissing(dataset[!, trait])), bins=100)
+        save(joinpath(descriptive_dir, string(trait, ".png")), fig)
+    end
+end
+
 function main(;
     outdir="outputs",
+    estimands_file = joinpath("assets", "estimands", "estimands.jls"),
     dataset_file=joinpath("dataset", "results", "dataset.arrow"),
     density_estimates_prefix=joinpath("simulation", "results", "density_estimation", "density_estimates/de")
     )
     isdir(outdir) || mkdir(outdir)
     dataset = TargetedEstimation.instantiate_dataset(dataset_file)
+    # Descriptive Plots
+    plot_dataset(dataset, outdir)
     # Density Estimates analysis
     density_estimates_barplots(outdir, density_estimates_prefix)
     # KSTest_plots(dataset, density_estimates_prefix, outdir)
