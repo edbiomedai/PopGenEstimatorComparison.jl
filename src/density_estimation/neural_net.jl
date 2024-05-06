@@ -61,7 +61,6 @@ end
 exponent(y, μ, σ, p_k_x) =
     @. log(p_k_x) - log(sqrt(2π)) - log(σ) - 0.5((y - μ) / σ)^2
 
-
 function (model::MixtureDensityNetwork)(x, y)
     p_k_x = model.p_k_x(x)
     σ_xk = model.σ_xk(x)

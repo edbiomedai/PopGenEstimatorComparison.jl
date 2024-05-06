@@ -1,6 +1,7 @@
-xgboost_classifier = XGBoostClassifier(tree_method="hist")
-xgboost_regressor = XGBoostRegressor(tree_method="hist")
 resampling = JointStratifiedCV(patterns=[r"^rs[0-9]+"], resampling=StratifiedCV(nfolds=3))
+
+xgboost_classifiers = (;(Symbol("xgboost_classifier_", id) => XGBoostClassifier(tree_method="hist", max_depth=max_depth, eta=η, num_round=100) 
+  for (id, (max_depth, η)) ∈ enumerate(Iterators.product([2, 4, 6, 8], [0.001, 0.01, 0.3])))...)
 
 default_models = TMLE.default_models(
   # For the estimation of E[Y|W, T]: continuous outcome
@@ -16,23 +17,13 @@ default_models = TMLE.default_models(
     cache = false
   ),
   # For the estimation of p(T| W)
-  G = Stack(
+  G = Stack(;
     metalearner        = LogisticClassifier(lambda=0., fit_intercept=false),
     resampling         = resampling,
     cache              = false,
     glmnet             = GLMNetClassifier(resampling=resampling),
     lr                 = LogisticClassifier(lambda=0.),
-    tuned_xgboost      = TunedModel(
-        model = xgboost_classifier,
-        resampling = resampling,
-        tuning = Grid(goal=20),
-        range = [
-            range(xgboost_classifier, :max_depth, lower=3, upper=7), 
-            range(xgboost_classifier, :lambda, lower=1e-5, upper=10, scale=:log)
-            ],
-        measure = log_loss,
-        cache=false
-    )
+    xgboost_classifiers...
   )
 )
 
