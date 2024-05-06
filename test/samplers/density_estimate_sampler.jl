@@ -18,7 +18,7 @@ TESTDIR = joinpath(pkgdir(PopGenEstimatorComparison), "test")
     density_estimation(
         dataset_file,
         density_file;
-        estimators_list=nothing,
+        mode="test",
         output=joinpath(density_dir, "density_Ybin.hdf5"),
         train_ratio=10,
         verbosity=0
@@ -28,7 +28,7 @@ TESTDIR = joinpath(pkgdir(PopGenEstimatorComparison), "test")
     density_estimation(
         dataset_file,
         density_file;
-        estimators_list=nothing,
+        mode="test",
         output=joinpath(density_dir, "density_T1.hdf5"),
         train_ratio=10,
         verbosity=0

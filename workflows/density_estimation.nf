@@ -57,7 +57,6 @@ process DensityEstimation {
     input:
         path dataset 
         path density
-        path estimators
         
     output:
         path outfile
@@ -69,7 +68,7 @@ process DensityEstimation {
         outfile = "${prefix}_estimate_${file_id}.hdf5"
         """
         ${JuliaCmd()} density-estimation ${dataset} ${density} \
-            --estimators=${estimators} \
+            --mode=study \
             --output=${outfile} \
             --train-ratio=${params.TRAIN_RATIO} \
             --verbosity=${params.VERBOSITY}
@@ -109,7 +108,6 @@ workflow DENSITY_ESTIMATION {
     dataset = Channel.value(file(params.DATASET, checkIfExists: true))
     estimands = Channel.fromPath(params.ESTIMANDS, checkIfExists: true)
     estimators = Channel.fromPath(params.ESTIMATORS, checkIfExists: true)
-    density_estimators = Channel.value(file(params.DENSITY_ESTIMATORS, checkIfExists: true))
     sample_sizes = Channel.fromList(params.SAMPLE_SIZES)
     rngs = Channel.fromList(params.RNGS)
     
@@ -120,7 +118,6 @@ workflow DENSITY_ESTIMATION {
     density_estimates = DensityEstimation(
         dataset,
         de_inputs.conditional_densities.flatten(),
-        density_estimators
     )
     
     estimands_by_group = de_inputs.estimands
@@ -152,6 +149,5 @@ workflow DENSITY_ESTIMATION {
         estimands.collect(),
         dataset,
         density_estimates.collect()
-
     )
 }

@@ -1,5 +1,5 @@
 
-best_density_estimator(file::AbstractString) = jldopen(io -> restore!(io["best-estimator"]), file)
+sieve_neural_net_density_estimator(file::AbstractString) = jldopen(io -> restore!(io["sieve-neural-net"]), file)
 
 struct DensityEstimateSampler
     sources::Vector
@@ -41,7 +41,7 @@ function sample_from(sampler::DensityEstimateSampler, origin_dataset; n=100)
 
     for density_mapping in (sampler.treatment_density_mapping, sampler.outcome_density_mapping)
         for ((outcome, parents), file) in density_mapping
-            conditional_density_estimate = PopGenEstimatorComparison.best_density_estimator(file)
+            conditional_density_estimate = PopGenEstimatorComparison.sieve_neural_net_density_estimator(file)
             sampled_dataset[!, outcome] = sample_from(
                 conditional_density_estimate, 
                 sampled_dataset[!, collect(parents)]            
@@ -69,7 +69,7 @@ end
 
 function monte_carlo_effect(Ψ, sampler, dataset)
     outcome_mean = TMLE.outcome_mean(Ψ)
-    Q = PopGenEstimatorComparison.best_density_estimator(sampler.outcome_density_mapping[outcome_mean.outcome => outcome_mean.parents])
+    Q = PopGenEstimatorComparison.sieve_neural_net_density_estimator(sampler.outcome_density_mapping[outcome_mean.outcome => outcome_mean.parents])
     X = TMLE.selectcols(dataset, outcome_mean.parents)
     labels = PopGenEstimatorComparison.getlabels(dataset[!, outcome_mean.outcome])
     ctf_agg = counterfactual_aggregate(Ψ, Q, X)

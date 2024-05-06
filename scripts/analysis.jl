@@ -103,7 +103,7 @@ function KSTest_plots(dataset, density_estimates_prefix, outdir)
             TargetedEstimation.coerce_types!(nomissing_dataset, [outcome, parents...])
             X = DataFrames.select(nomissing_dataset, parents)
             y = nomissing_dataset[!, outcome]
-            density_estimate = io["best-estimator"]
+            density_estimate = io["sieve-neural-net"]
             y_sampled = sample_from(
                 density_estimate.neural_net_estimator.model, 
                 PopGenEstimatorComparison.transpose_table(density_estimate.neural_net_estimator, X),

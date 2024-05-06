@@ -173,7 +173,7 @@ end
         "density-estimation",
         datasetfile,
         density_file,
-        string("--estimators=", estimators_file),
+        "--mode=test",
         string("--output=", output),
         string("--train-ratio=10"),
         string("--verbosity=0")
@@ -181,7 +181,7 @@ end
     PopGenEstimatorComparison.julia_main()
 
     jldopen(output) do io
-        @test io["best-estimator"] isa SieveNeuralNetworkEstimator
+        @test io["sieve-neural-net"] isa SieveNeuralNetworkEstimator
         @test io["outcome"] == :x
         @test io["parents"] == [:y]
         @test length(io["estimators"]) == 2
@@ -200,7 +200,7 @@ end
         "density-estimation",
         datasetfile,
         density_file,
-        string("--estimators=", estimators_file),
+        "--mode=test",
         string("--output=", output),
         string("--train-ratio=10"),
         string("--verbosity=0")
@@ -213,7 +213,7 @@ end
         metrics = io["metrics"]
         @test length(metrics) == 2
         @test length(io["estimators"]) == 2
-        @test haskey(io, "best-estimator")
+        @test io["sieve-neural-net"] isa SieveNeuralNetworkEstimator
     end
 end
 

@@ -1,23 +1,32 @@
-"""
-This is a hardcoded function providing a list of density estimators
-"""
 function test_density_estimators(X, y; batchsize=16)
     snne = SieveNeuralNetworkEstimator(X, y; 
         hidden_sizes_candidates=[(20,), (20, 20)], 
         batchsize=batchsize
     )
     glm = GLMEstimator(X, y)
-    return [snne, glm]
+    return (snne=snne, glm=glm)
 end
 
-function get_density_estimators end
-
-function get_density_estimators(file::String, X, y)
-    include(abspath(file))
-    return Base.invokelatest(get_density_estimators, X, y)
+function study_density_estimators(X, y)
+    snne = SieveNeuralNetworkEstimator(X, y; 
+        hidden_sizes_candidates=[(5,), (10,), (20,), (40,), (60,), (80,), (100,), (120,), (140,)], 
+        max_epochs=10_000,
+        sieve_patience=5,
+        batchsize=64,
+        patience=5
+    )
+    glm = GLMEstimator(X, y)
+    return (snne=snne, glm=glm)
 end
 
-get_density_estimators(::Nothing, X, y) = test_density_estimators(X, y)
+function get_density_estimators(mode, X, y)
+    density_estimators = if mode == "test"
+        test_density_estimators(X, y)
+    else
+        study_density_estimators(X, y)
+    end
+    return density_estimators
+end
 
 function read_density_variables(file)
     d = JSON.parsefile(file)
@@ -35,6 +44,17 @@ function is_compatible_with_group(conditional_densities, group_conditional_densi
     return true
 end
 
+"""
+    make_compatible_estimands_groups(estimands)
+
+Split estimands in compatible groups. Each group must correspond to exactly the same generating process.
+Each generating process is determined by:
+    - A set of propensity scores
+    - An outcome model
+
+Ince confounders are always the same PCs for every single treatment variable, the propensity scores are all compatible with each other.
+Since confounders and covariates are always the same across outcome models, the outcome models are only compatible if they share exactly the same treatments.
+"""
 function make_compatible_estimands_groups(estimands)
     groups = []
     for Ψ in estimands
@@ -97,7 +117,7 @@ serializable!(estimators::AbstractVector) = [serializable!(estimator) for estima
 function density_estimation(
     dataset_file,
     density_file;
-    estimators_list=nothing,
+    mode="study",
     output=string("density_estimate.hdf5"),
     train_ratio=10,
     verbosity=1
@@ -107,7 +127,7 @@ function density_estimation(
     TargetedEstimation.coerce_types!(dataset, [outcome, parents...])
 
     X, y = X_y(dataset, parents, outcome)
-    density_estimators = get_density_estimators(estimators_list, X, y)
+    density_estimators = get_density_estimators(mode, X, y)
     X_train, y_train, X_test, y_test = train_validation_split(X, y; train_ratio=train_ratio)
     metrics = []
     for estimator in density_estimators
@@ -116,10 +136,9 @@ function density_estimation(
         test_loss = evaluation_metrics(estimator, X_test, y_test).logloss
         push!(metrics, (train_loss=train_loss, test_loss=test_loss))
     end
-    # Retrain best
-    best_estimator_id = findmin(x -> x.test_loss, metrics)[2]
-    best_estimator = get_density_estimators(estimators_list, X, y)[best_estimator_id]
-    train!(best_estimator, X, y, verbosity=verbosity-1)
+    # Retrain Sieve Neural Network
+    snne = get_density_estimators(mode, X, y).snne
+    train!(snne, X, y, verbosity=verbosity-1)
     # Save
     if output !== nothing
         jldopen(output, "w") do io
@@ -127,7 +146,7 @@ function density_estimation(
             io["parents"] = parents
             io["estimators"] = PopGenEstimatorComparison.serializable!(density_estimators)
             io["metrics"] = metrics
-            io["best-estimator"] = PopGenEstimatorComparison.serializable!(best_estimator)
+            io["sieve-neural-net"] = PopGenEstimatorComparison.serializable!(snne)
         end
     end
     return 0

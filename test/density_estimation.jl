@@ -61,13 +61,13 @@ include(joinpath(TESTDIR, "testutils.jl"))
                 "density-estimation",
                 dataset_file,
                 joinpath(de_inputs_dir, density_file),
-                string("--estimators=", density_estimators_file),
+                "--mode=test",
                 string("--output=", outfile),
                 "--train-ratio=7",
                 "--verbosity=0"
             ])
             PopGenEstimatorComparison.julia_main()
-            best_estimator = PopGenEstimatorComparison.best_density_estimator(outfile)
+            best_estimator = PopGenEstimatorComparison.sieve_neural_net_density_estimator(outfile)
             @test !(best_estimator isa Nothing)
             density_dict = JSON.parsefile(joinpath(de_inputs_dir, density_file))
             jldopen(outfile) do io

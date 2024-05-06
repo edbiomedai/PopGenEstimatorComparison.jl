@@ -144,9 +144,10 @@ function cli_settings()
             arg_type = String
             help = "YAML file with an `outcome` field and a `parents` field"
 
-        "--estimators"
+        "--mode"
             arg_type = String
-            help = "Julia file containing a `get_density_estimators` function."
+            default = "study"
+            help = "study or test"
 
         "--output"
             arg_type = String
@@ -200,7 +201,7 @@ function julia_main()::Cint
         density_estimation(
             cmd_settings["dataset"],
             cmd_settings["density-file"];
-            estimators_list=cmd_settings["estimators"],
+            mode=cmd_settings["mode"],
             output=cmd_settings["output"],
             train_ratio=cmd_settings["train-ratio"],
             verbosity=cmd_settings["verbosity"]
