@@ -13,6 +13,6 @@ process AggregateResults {
 
     script:
         """
-        ${JuliaCmd()} aggregate permutation_results ${outfile}
+        ${JuliaCmd()} aggregate results ${outfile}
         """
 }

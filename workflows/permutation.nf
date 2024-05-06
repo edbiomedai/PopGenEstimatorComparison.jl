@@ -34,7 +34,7 @@ process PermutationEstimation {
         path out
 
     script:
-        out = "permutation_results__${rng}__${sample_size}__${estimands.getBaseName()}__${estimators.getBaseName()}.hdf5"
+        out = "results__${rng}__${sample_size}__${estimands.getBaseName()}__${estimators.getBaseName()}.hdf5"
         sample_size_option = sample_size != -1 ? "--sample-size=${sample_size}" : ""
         """
         mkdir workdir
