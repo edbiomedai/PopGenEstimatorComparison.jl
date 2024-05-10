@@ -21,10 +21,10 @@ include(joinpath(TESTDIR, "testutils.jl"))
     estimands = linear_interaction_dataset_ATEs().estimands
     sampler = PermutationSampler(estimands)
     @test sampler.confounders_and_covariates == Set([:C, :W])
-    @test sampler.other_variables == Set([:Ycont, :Ybin, :T₁, :T₂])
+    @test sampler.other_variables == Set([:Ycont, :Ybin, :Ycount, :T₁, :T₂])
 
     sampled_dataset = sample_from(sampler, origin_dataset, n=1000)
-    @test names(sampled_dataset) == ["W", "C", "Ycont", "Ybin", "T₁", "T₂"]
+    @test names(sampled_dataset) == ["W", "C", "Ycont", "Ybin", "T₁", "Ycount", "T₂"]
     @test size(sampled_dataset, 1) == 1000
     # Structure between (W, C) is preserved
     origin_WC = [row for row in eachrow(origin_dataset[!, ["W", "C"]])]
@@ -48,11 +48,16 @@ include(joinpath(TESTDIR, "testutils.jl"))
     @test_throws AssertionError("All estimands should share the same confounders and covariates.") PermutationSampler(estimands)
 
     # True effects
+    ## Continuous Outcome
     Ψ = estimands[1]
     @test theoretical_true_effect(Ψ, sampler) == 0
     @test empirical_true_effect(Ψ, sampler, origin_dataset; n=100_000) ≈ 0. atol=0.01
     @test true_effect(Ψ, sampler, origin_dataset) == 0
+    ## Count Outcome
     Ψ = estimands[2]
+    @test true_effect(Ψ, sampler, origin_dataset) == 0
+    ## Composed Estimand / Binary Outcome
+    Ψ = estimands[3]
     @test theoretical_true_effect(Ψ, sampler) == [0, 0]
     composed_effect = empirical_true_effect(Ψ, sampler, origin_dataset; n=100_000)
     @test composed_effect[1] == - composed_effect[2]

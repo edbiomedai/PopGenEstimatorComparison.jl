@@ -21,10 +21,14 @@ include(joinpath(TESTDIR, "testutils.jl"))
     estimands = linear_interaction_dataset_ATEs().estimands
     statistics = PopGenEstimatorComparison.compute_statistics(dataset, estimands)
     # Continuous outcome, one treatment
+    @test only(keys(statistics[1])) == :T₁
     @test names(statistics[1][:T₁]) == ["T₁", "proprow", "nrow"]
+    # Count outcome, one treatment
+    @test only(keys(statistics[2])) == :T₁
+    @test names(statistics[2][:T₁]) == ["T₁", "proprow", "nrow"]
     # Binary outcome, two treatments
     for key ∈ (:Ybin, :T₁, :T₂, (:T₁, :T₂) ,(:Ybin, :T₁, :T₂))
-        stats = statistics[2][key]
+        stats = statistics[3][key]
         @test stats isa DataFrame
         @test hasproperty(stats, "proprow")
         @test hasproperty(stats, "nrow")
@@ -32,11 +36,11 @@ include(joinpath(TESTDIR, "testutils.jl"))
 end
 
 @testset "Test estimands variables accessors" begin
-    Ψ, composedΨ = linear_interaction_dataset_ATEs().estimands
+    Ψcont, Ψcount, composedΨ = linear_interaction_dataset_ATEs().estimands
 
-    @test confounders_and_covariates_set(Ψ) == Set([:W, :C])
-    @test get_outcome(Ψ) == :Ycont
-    @test get_treatments(Ψ) == (:T₁,)
+    @test confounders_and_covariates_set(Ψcont) == Set([:W, :C])
+    @test get_outcome(Ψcont) == :Ycont
+    @test get_treatments(Ψcont) == (:T₁,)
 
     @test confounders_and_covariates_set(composedΨ) == Set([:W, :C])
     @test get_outcome(composedΨ) == :Ybin
