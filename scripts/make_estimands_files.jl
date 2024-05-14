@@ -46,7 +46,10 @@ function main()
     DATASET_FILE = joinpath("dataset", "results", "dataset.arrow")
     DESTINATION_DIR = joinpath("assets", "estimands")
     positivity_constraint = 0.
-    @assert isdir(DESTINATION_DIR)
+    group_size = 5
+    
+    isdir(DESTINATION_DIR) || mkdir(DESTINATION_DIR)
+
     dataset = Arrow.Table(DATASET_FILE) |> DataFrame
 
     variables = PopGenEstimatorComparison.variables_from_dataset(dataset)
@@ -64,7 +67,9 @@ function main()
         positivity_constraint=positivity_constraint
     )
     estimands = groups_ordering(vcat(ATEs, IATEs))
-    serialize(joinpath(DESTINATION_DIR, "estimands.jls"), Configuration(estimands=estimands))
+    for (group_id, estimands_group) in enumerate(Iterators.partition(estimands, group_size))
+        serialize(joinpath(DESTINATION_DIR, string("estimands_", group_id, ".jls")), Configuration(estimands=estimands_group))
+    end
 end
 
 main()

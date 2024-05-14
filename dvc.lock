@@ -60,8 +60,8 @@ stages:
     cmd: julia --project --startup-file=no -e'using Pkg; Pkg.instantiate(); Pkg.precompile()'
     deps:
     - path: Manifest.toml
-      md5: 81c64122bb71d9721c54f708a32aac4b
-      size: 96379
+      md5: b6549b9c0bfb1d349bc181cb323cbfbe
+      size: 95273
   make-estimands:
     cmd: julia --project --startup-file=no scripts/make_estimands_files.jl
     deps:
@@ -69,12 +69,13 @@ stages:
       md5: c78dcb879c2111ecaf9b609be01486dc
       size: 542735842
     - path: scripts/make_estimands_files.jl
-      md5: 7b5f22e12bcc268674bd950bbc4bb917
-      size: 3023
+      md5: 51918ab3b0c509b9b062b84382e708f2
+      size: 2487
     outs:
-    - path: assets/estimands/estimands.jls
-      md5: 51e0148aeeda431c533c4b0ec8778257
-      size: 32061
+    - path: assets/estimands
+      md5: ec8474aaf691c10baae93c7d487b17a5.dir
+      size: 36720
+      nfiles: 10
   simulation:
     cmd: nextflow run ../main.nf -resume -profile eddie -N s2042526@ed.ac.uk
     deps:
