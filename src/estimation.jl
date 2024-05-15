@@ -21,8 +21,9 @@ function estimate_from_simulated_data(
     origin_dataset = TargetedEstimation.instantiate_dataset(origin_dataset)
     sample_size = sample_size !== nothing ? sample_size : nrow(origin_dataset)
     estimands = TargetedEstimation.instantiate_estimands(estimands_config, origin_dataset)
-    all_variables = collect(union((TargetedEstimation.variables(arg) for arg in estimands)...))
-    TargetedEstimation.coerce_types!(origin_dataset, all_variables)
+    for estimand in estimands
+        TargetedEstimation.coerce_types!(origin_dataset, estimand)
+    end
     estimators_spec = TargetedEstimation.instantiate_estimators(estimators_config)
     sampler = get_sampler(sampler_config, estimands)
     statistics = []

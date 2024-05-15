@@ -124,7 +124,13 @@ function density_estimation(
     )
     outcome, parents = read_density_variables(density_file)
     dataset = TargetedEstimation.instantiate_dataset(dataset_file)
-    TargetedEstimation.coerce_types!(dataset, [outcome, parents...])
+    TargetedEstimation.coerce_types!(dataset, parents)
+    # Continuous and Counts except Binary outcomes are treated as continuous
+    if elscitype(dataset[!, outcome]) <: Infinite && !(TargetedEstimation.isbinary(outcome, dataset))
+        TargetedEstimation.coerce_types!(dataset, [outcome], rules=:discrete_to_continuous)
+    else
+        TargetedEstimation.coerce_types!(dataset, [outcome], rules=:few_to_finite)
+    end
 
     X, y = X_y(dataset, parents, outcome)
     density_estimators = get_density_estimators(mode, X, y)

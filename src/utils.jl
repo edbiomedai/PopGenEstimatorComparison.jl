@@ -81,7 +81,7 @@ function compute_statistics(dataset, Ψ::TMLE.Estimand)
     outcome = get_outcome(Ψ)
     treatments = get_treatments(Ψ)
     nomissing_dataset = dropmissing(dataset, [outcome, treatments..., confounders_and_covariates_set(Ψ)...])
-    categorical_variables = autotype(dataset[!, outcome]) <: Finite ? (outcome, treatments...) : treatments
+    categorical_variables = TargetedEstimation.isbinary(outcome, nomissing_dataset) ? (outcome, treatments...) : treatments
 
     statistics = Dict()
     # Each Variable

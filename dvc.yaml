@@ -21,13 +21,13 @@ stages:
             - results/dataset.arrow
             - scripts/make_estimands_files.jl
         outs:
-            - assets/estimands/estimands.jls
+            - assets/estimands
     simulation:
         wdir: simulation
         cmd: nextflow run ../main.nf -resume -with-trace -profile eddie -N s2042526@ed.ac.uk
         deps:
             - ../dataset/results/dataset.arrow
-            - ../assets/estimands/estimands.jls
+            - ../assets/estimands
             - nextflow.config
         outs:
             - results/permutation_results.hdf5

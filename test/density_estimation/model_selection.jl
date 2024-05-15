@@ -109,11 +109,12 @@ end
     PopGenEstimatorComparison.julia_main()
     # group 1
     estimands = deserialize(joinpath(outputdir, "de_group_1_estimands_1.jls")).estimands
-    @test length(estimands) == 3
-    cdes = Set([JSON.parsefile(joinpath(outputdir, "de_group_1_conditional_density_$i.json")) for i in 1:4])
+    @test length(estimands) == 4
+    cdes = Set([JSON.parsefile(joinpath(outputdir, "de_group_1_conditional_density_$i.json")) for i in 1:5])
     @test cdes == Set([
         Dict("parents" => ["W"], "outcome" => "T₂"),
         Dict("parents" => ["C", "T₁", "W"], "outcome" => "Ycont"),
+        Dict("parents" => ["C", "T₁", "W"], "outcome" => "Ycount"),
         Dict("parents" => ["W"], "outcome" => "T₁"),
         Dict("parents" => ["C", "T₁", "T₂", "W"], "outcome" => "Ybin")
     ])
@@ -146,10 +147,11 @@ end
     @test length(deserialize(joinpath(outputdir, "de_group_1_estimands_1.jls")).estimands) == 1
     @test length(deserialize(joinpath(outputdir, "de_group_1_estimands_2.jls")).estimands) == 1
 
-    cdes = Set([JSON.parsefile(joinpath(outputdir, "de_group_1_conditional_density_$i.json")) for i in 1:4])
+    cdes = Set([JSON.parsefile(joinpath(outputdir, "de_group_1_conditional_density_$i.json")) for i in 1:5])
     @test cdes == Set([
         Dict("parents" => ["W"], "outcome" => "T₂"),
         Dict("parents" => ["C", "T₁", "W"], "outcome" => "Ycont"),
+        Dict("parents" => ["C", "T₁", "W"], "outcome" => "Ycount"),
         Dict("parents" => ["W"], "outcome" => "T₁"),
         Dict("parents" => ["C", "T₁", "T₂", "W"], "outcome" => "Ybin")
     ])

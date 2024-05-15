@@ -4,6 +4,7 @@ function dummy_dataset(n=100)
         T₁ = categorical(rand(["AC", "CC", "AA"], n)),
         T₂ = categorical(rand(["GT", "GG", "TT"], n)),
         Ybin = categorical(rand([0, 1], n)),
+        Ycount = rand([0, 1, 2, 4], n),
         Ycont = rand(n),
         W₁ = rand(n),
         W₂ = rand(n),
@@ -29,17 +30,22 @@ function linear_interaction_dataset(n=100)
     T₁ = Int.(rand(U, n) .< μT₁)
     μT₂ = logistic.(-1W .+ 0.5)
     T₂ = Int.(rand(U, n) .< μT₂)
+    # Continuous outcome
     μYcont = 0.5T₁ .- 1.2T₂ .+ 0.3T₁.*T₂ .+ 0.6W .- 0.2C
     Ycont = μYcont .+ rand(G₀, n) 
+    # Binary outcome
     μYbin = logistic.(0.5T₁ .- 1.2T₂ .+ 0.3T₁.*T₂ .+ 0.6W .- 0.2C)
     Ybin = Int.(rand(U) .< μYbin)
+    # Count outcome
+    Ycount = rand([0, 1, 2, 4], n)
     return DataFrame(
         W =W, 
         C =C, 
         T₁ = T₁, 
         T₂ = T₂, 
         Ycont = Ycont, 
-        Ybin = Ybin
+        Ybin = Ybin,
+        Ycount = Ycount
     )
 end
 
@@ -65,6 +71,11 @@ function linear_interaction_dataset_ATEs()
         estimands = [
         ATE(
             outcome=:Ycont,
+            treatment_values = (T₁ = (case=1, control=0),),
+            treatment_confounders = (:W,),
+            outcome_extra_covariates = (:C,)
+        ),
+        ATE(outcome=:Ycount,
             treatment_values = (T₁ = (case=1, control=0),),
             treatment_confounders = (:W,),
             outcome_extra_covariates = (:C,)
