@@ -20,12 +20,14 @@ using ArgParse
 using JSON
 using Serialization
 using Makie
+using CSV
 using CairoMakie
 
 include("utils.jl")
 
 include(joinpath("density_estimation", "glm.jl"))
 include(joinpath("density_estimation", "neural_net.jl"))
+include(joinpath("density_estimation", "inputs_from_gene_atlas.jl"))
 include(joinpath("density_estimation", "model_selection.jl"))
 
 include(joinpath("samplers", "permutation_null_sampler.jl"))
