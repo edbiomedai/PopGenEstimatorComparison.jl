@@ -44,6 +44,7 @@ export NeuralNetworkEstimator, SieveNeuralNetworkEstimator
 export GLMEstimator
 export sample_from, train!, evaluation_metrics
 export density_estimation, density_estimation_inputs
+export density_estimation_inputs_from_gene_atlas
 export estimate_from_simulated_data
 export save_aggregated_df_results
 export analyse
