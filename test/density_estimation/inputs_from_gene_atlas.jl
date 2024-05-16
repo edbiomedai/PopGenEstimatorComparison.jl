@@ -3,6 +3,34 @@ module TestInputsFromGeneAtlas
 using TMLE
 using Test
 using PopGenEstimatorComparison
+using Serialization
+
+function test_estimands()
+    return [
+        factorialEstimand(ATE, (rs502771=["TT", "TC", "CC"],), "sarcoidosis";
+            confounders=[:PC1, :PC2, :PC3], 
+            outcome_extra_covariates=["Genetic-Sex", "Age-Assessment"]
+        ),
+        factorialEstimand(ATE, (rs184270108=["CC", "CT", "TT"],), "sarcoidosis";
+            confounders=[:PC1, :PC2, :PC3], 
+            outcome_extra_covariates=["Genetic-Sex", "Age-Assessment"]
+        ),
+        factorialEstimand(IATE, (rs502771=["TT", "TC", "CC"], rs184270108=["CC", "CT", "TT"],), "sarcoidosis";
+            confounders=[:PC1, :PC2, :PC3], 
+            outcome_extra_covariates=["Genetic-Sex", "Age-Assessment"]
+        ),
+        factorialEstimand(IATE, (rs11868112=["CC", "CT", "TT"], rs6456121=["CC", "CT", "TT"], rs356219=["GG", "GA", "AA"]), "G20 Parkinson's disease";
+            confounders=[:PC1, :PC2, :PC3], 
+            outcome_extra_covariates=["Genetic-Sex", "Age-Assessment"]
+        ),
+    ]
+end
+
+function save_test_estimands(outdir)
+    estimands = test_estimands()
+    serialize(joinpath(outdir, "estimands_1.jls"), TMLE.Configuration(estimands=estimands[1:2]))
+    serialize(joinpath(outdir, "estimands_2.jls"), TMLE.Configuration(estimands=estimands[3:end]))
+end
 
 TESTDIR = joinpath(pkgdir(PopGenEstimatorComparison), "test")
 
@@ -33,7 +61,7 @@ include(joinpath(TESTDIR, "testutils.jl"))
         )
 end
 
-@testset "Test get_trait_key_map"
+@testset "Test get_trait_key_map" begin
     # "Vitamin D Level" and "Red-Hair" are not part of the geneATLAS
     traits = ["G35 Multiple sclerosis", "Vitamin D Level", "White blood cell (leukocyte) count", "sarcoidosis", "D86 Sarcoidosis", "G35 Multiple sclerosis", "K90-K93 Other diseases of the digestive system", "H00-H06 Disorders of eyelid, lacrimal system and orbit", "Trunk fat percentage"]
     @test_throws ArgumentError PopGenEstimatorComparison.get_trait_key_map(traits; trait_table_path=joinpath("assets", "Traits_Table_GeneATLAS.csv"))
@@ -52,23 +80,20 @@ end
 end
 
 @testset "Test density_estimation_inputs_from_gene_atlas" begin
+    tmpdir = mktempdir()
+    save_test_estimands(tmpdir)
     copy!(ARGS, [
-        "density-estimation-inputs-from-ga",
-        "estimands_file"
-        datasetfile,
-        estimands_prefix,
-        string("--output-prefix=", output_prefix),
-        string("--batchsize=10")
+        "simulation-inputs-from-ga",
+        joinpath(tmpdir, "estimands"),
+        string("--ga-download-dir=", joinpath(tmpdir, "gene_atlas_data")),
+        "--remove-ga-data=true",
+        string("--ga-trait-table=", joinpath("assets", "Traits_Table_GeneATLAS.csv")),
+        "--maf-threshold=0.01",
+        "--pvalue-threshold=1e-5",
+        "--distance-threshold=1e6"
     ])
     PopGenEstimatorComparison.julia_main()
 
-    density_estimation_inputs_from_gene_atlas(estimands, genotypes_prefix;
-        gene_atlas_dir="gene_atlas_data", 
-        trait_table_path=joinpath("assets", "Traits_Table_GeneATLAS.csv"),
-        maf=0.01,
-        pvalue_threshold=1e-5,
-        distance_threshold=1e6
-    )
 end
 
 end
