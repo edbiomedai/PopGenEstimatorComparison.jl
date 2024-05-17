@@ -204,6 +204,17 @@ function cli_settings()
             arg_type = Float64
             default = 1e6
             help = "Only variants that are at least `distance-threhsold` away from each other are selected."
+        
+        "--output-prefix"
+            arg_type = String
+            default = "ga_sim_input"
+            help = "Prefix to outputs."
+        
+        "--batchsize"
+            arg_type = Int
+            default = 10
+            help = "Estimands are further split in files of `batchsize`"
+            
     end
 
     return s
@@ -238,7 +249,9 @@ function julia_main()::Cint
             trait_table_path=cmd_settings["ga-trait-table"],
             maf_threshold=cmd_settings["maf-threshold"],
             pvalue_threshold=cmd_settings["pvalue-threshold"],
-            distance_threshold=cmd_settings["distance-threshold"]
+            distance_threshold=cmd_settings["distance-threshold"],
+            output_prefix=cmd_settings["output-prefix"],
+            batchsize=cmd_settings["batchsize"]
         )
     elseif cmd == "density-estimation-inputs"
         density_estimation_inputs(

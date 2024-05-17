@@ -210,11 +210,11 @@ function simulation_inputs_from_gene_atlas(estimands_prefix;
     end
     # Write densities
     density_index = 1
-    confounders_and_covariates = confounders_and_covariates_set(first(estimands))
-    @assert all(confounders_and_covariates_set(Ψ) == confounders_and_covariates for Ψ ∈ estimands)
+    confounders = get_confounders_assert_equal(estimands)
+    covariates = get_covariates_assert_equal(estimands)
     ## Outcome densities
     for (outcome, variants) in trait_to_variants
-        parents = vcat(variants, confounders_and_covariates...)
+        parents = vcat(variants, confounders..., covariates...)
         open(string(output_prefix, "_conditional_density_", density_index, ".json"), "w") do io
             JSON.print(io, Dict("outcome" => outcome, "parents" => parents), 1)
         end
@@ -222,9 +222,8 @@ function simulation_inputs_from_gene_atlas(estimands_prefix;
     end
     ## Propensity scores
     for variant in unique_variants
-        parents = collect(confounders_and_covariates)
         open(string(output_prefix, "_conditional_density_", density_index, ".json"), "w") do io
-            JSON.print(io, Dict("outcome" => variant, "parents" => parents), 1)
+            JSON.print(io, Dict("outcome" => variant, "parents" => confounders), 1)
         end
         density_index += 1
     end
