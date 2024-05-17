@@ -1,3 +1,5 @@
+include { JuliaCmd } from '../modules/functions.nf'
+
 process DensityEstimation {
     label 'multithreaded'
     label 'bigmem'
