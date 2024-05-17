@@ -25,5 +25,5 @@ include { GENE_ATLAS_SIMULATION } from './workflows/gene_atlas_simulation.nf'
 workflow {
     PERMUTATION_ESTIMATION()
     DENSITY_ESTIMATION()
-    GENE_ATLAS_SIMULATION()
+    // GENE_ATLAS_SIMULATION()
 }
