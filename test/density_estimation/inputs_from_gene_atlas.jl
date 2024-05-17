@@ -6,7 +6,8 @@ using PopGenEstimatorComparison
 using Serialization
 using JSON
 
-TESTDIR = joinpath(pkgdir(PopGenEstimatorComparison), "test")
+PKGDIR = pkgdir(PopGenEstimatorComparison)
+TESTDIR = joinpath(PKGDIR, "test")
 
 include(joinpath(TESTDIR, "testutils.jl"))
 
@@ -65,10 +66,10 @@ end
 @testset "Test get_trait_key_map" begin
     # "Vitamin D Level" and "Red-Hair" are not part of the geneATLAS
     traits = ["G35 Multiple sclerosis", "Vitamin D Level", "White blood cell (leukocyte) count", "sarcoidosis", "D86 Sarcoidosis", "G35 Multiple sclerosis", "K90-K93 Other diseases of the digestive system", "H00-H06 Disorders of eyelid, lacrimal system and orbit", "Trunk fat percentage"]
-    @test_throws ArgumentError PopGenEstimatorComparison.get_trait_key_map(traits; trait_table_path=joinpath("assets", "Traits_Table_GeneATLAS.csv"))
+    @test_throws ArgumentError PopGenEstimatorComparison.get_trait_key_map(traits; trait_table_path=joinpath(PKGDIR, "assets", "Traits_Table_GeneATLAS.csv"))
     # Only valid traits
     traits = ["G35 Multiple sclerosis", "White blood cell (leukocyte) count", "sarcoidosis", "D86 Sarcoidosis", "G35 Multiple sclerosis", "K90-K93 Other diseases of the digestive system", "H00-H06 Disorders of eyelid, lacrimal system and orbit", "Trunk fat percentage"]
-    trait_key_map = PopGenEstimatorComparison.get_trait_key_map(traits; trait_table_path=joinpath("assets", "Traits_Table_GeneATLAS.csv"))
+    trait_key_map = PopGenEstimatorComparison.get_trait_key_map(traits; trait_table_path=joinpath(PKGDIR, "assets", "Traits_Table_GeneATLAS.csv"))
     @test trait_key_map == Dict(
         "G35 Multiple sclerosis"                                 => "clinical_c_G35",
         "sarcoidosis"                                            => "selfReported_n_1414",
@@ -89,7 +90,7 @@ end
         joinpath(tmpdir, "estimands"),
         string("--ga-download-dir=", joinpath(tmpdir, "gene_atlas_data")),
         "--remove-ga-data=true",
-        string("--ga-trait-table=", joinpath("assets", "Traits_Table_GeneATLAS.csv")),
+        string("--ga-trait-table=", joinpath(PKGDIR, "assets", "Traits_Table_GeneATLAS.csv")),
         "--maf-threshold=0.01",
         "--pvalue-threshold=1e-5",
         "--distance-threshold=1e6",
