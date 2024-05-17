@@ -2,6 +2,8 @@ include { MakeDataset } from '../modules/dataset.nf'
 include { IIDGenotypes; GeneticConfounders } from '../subworkflows/confounders.nf'
 include { ExtractTraits } from '../subworkflows/extract_traits.nf'
 include { DensityEstimation } from '../modules/density_estimation.nf'
+include { AggregateResults } from '../modules/aggregate.nf'
+include { JuliaCmd; LongestPrefix } from '../modules/functions.nf'
 
 process GeneAtlasSimulationInputs {
     label 'bigmem'
@@ -20,16 +22,15 @@ process GeneAtlasSimulationInputs {
 
     script:
         estimands_prefix = LongestPrefix(estimands_files)
-        density_estimates_prefix = LongestPrefix(density_estimates_files)
         """
         ${JuliaCmd()} simulation-inputs-from-ga \
             ${estimands_prefix} \
             --ga-download-dir=gene_atlas_data \
             --ga-trait-table=${ga_trait_table} \
             --remove-ga-data=true \
-            --maf-threshold=${params.MAF_THRESHOLD} \
-            --pvalue-threshold=${params.PVAL_THRESHOLD} \
-            --distance-threshold=${params.DISTANCE_THRESHOLD} \
+            --maf-threshold=${params.GA_MAF_THRESHOLD} \
+            --pvalue-threshold=${params.GA_PVAL_THRESHOLD} \
+            --distance-threshold=${params.GA_DISTANCE_THRESHOLD} \
             --output-prefix=ga_sim_input \
             --batchsize=${params.BATCH_SIZE}
         """
@@ -67,27 +68,22 @@ process EstimationFromDensityEstimates {
 
 workflow GENE_ATLAS_SIMULATION {
     // General Simulation Input Grid
-    estimands = Channel.fromPath(params.ESTIMANDS, checkIfExists: true)
+    estimands_files = Channel.fromPath(params.ESTIMANDS, checkIfExists: true)
     estimators = Channel.fromPath(params.ESTIMATORS, checkIfExists: true)
     sample_sizes = Channel.fromList(params.SAMPLE_SIZES)
     rngs = Channel.fromList(params.RNGS)
 
-    // Traits params
+    // Dataset params
     ga_trait_table = Channel.value(file(params.GA_TRAIT_TABLE, checkIfExists: true))
     ukb_encoding_file = params.UKB_ENCODING_FILE
     ukb_config = Channel.value(file("$params.UKB_CONFIG", checkIfExists: true))
     ukb_withdrawal_list = Channel.value(file("$params.UKB_WITHDRAWAL_LIST", checkIfExists: true))
     traits_dataset = Channel.value(file("$params.TRAITS_DATASET", checkIfExists: true))
-    
-    // Confounders params
     qc_file = Channel.value(file("$params.QC_FILE", checkIfExists: true))
     flashpca_excl_reg = Channel.value(file("$params.FLASHPCA_EXCLUSION_REGIONS", checkIfExists: true))
     ld_blocks = Channel.value(file("$params.LD_BLOCKS", checkIfExists: true))
     bed_files = Channel.fromFilePairs("$params.BED_FILES", size: 3, checkIfExists: true){ file -> file.baseName }
-    
-    // Variants params
     bgen_files = Channel.fromPath("$params.BGEN_FILES", checkIfExists: true).collect()
-    variant_list = Channel.value(file(params.VARIANTS_LIST, checkIfExists: true))
 
     // Traits Extraction
     ExtractTraits(
@@ -116,7 +112,7 @@ workflow GENE_ATLAS_SIMULATION {
     )
 
     // Dataset
-    MakeDataset(
+    dataset = MakeDataset(
         bgen_files,
         ExtractTraits.out,
         GeneticConfounders.out,

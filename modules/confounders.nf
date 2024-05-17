@@ -64,7 +64,6 @@ process mergeBEDS{
         --input LDpruned. \
         --output ukbb_merged merge
         """
-
 }
 
 process SampleQCFilter {
