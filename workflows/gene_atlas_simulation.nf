@@ -32,7 +32,8 @@ process GeneAtlasSimulationInputs {
             --pvalue-threshold=${params.GA_PVAL_THRESHOLD} \
             --distance-threshold=${params.GA_DISTANCE_THRESHOLD} \
             --output-prefix=ga_sim_input \
-            --batchsize=${params.BATCH_SIZE}
+            --batchsize=${params.BATCH_SIZE} \
+            --max-variants=${params.MAX_VARIANTS}
         """
 }
 
@@ -107,7 +108,7 @@ workflow GENE_ATLAS_SIMULATION {
 
     // Simulation Inputs
     simulation_inputs = GeneAtlasSimulationInputs(
-        estimands_files,
+        estimands_files.collect(),
         ga_trait_table
     )
 

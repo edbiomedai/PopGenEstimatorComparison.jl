@@ -205,6 +205,11 @@ function cli_settings()
             default = 1e6
             help = "Only variants that are at least `distance-threhsold` away from each other are selected."
         
+        "--max-variants"
+            arg_type = Int
+            default = 100
+            help = "Maximum variants retrieved per trait."
+
         "--output-prefix"
             arg_type = String
             default = "ga_sim_input"
@@ -251,7 +256,8 @@ function julia_main()::Cint
             pvalue_threshold=cmd_settings["pvalue-threshold"],
             distance_threshold=cmd_settings["distance-threshold"],
             output_prefix=cmd_settings["output-prefix"],
-            batchsize=cmd_settings["batchsize"]
+            batchsize=cmd_settings["batchsize"],
+            max_variants=cmd_settings["max-variants"]
         )
     elseif cmd == "density-estimation-inputs"
         density_estimation_inputs(

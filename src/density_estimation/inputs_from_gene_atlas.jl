@@ -77,7 +77,8 @@ function update_trait_to_variants_from_gene_atlas!(trait_to_variants, trait_key_
     remove_ga_data=true,
     maf_threshold=0.01,
     pvalue_threshold=1e-5,
-    distance_threshold=1e6
+    distance_threshold=1e6,
+    max_variants=100
     )
     isdir(gene_atlas_dir) || mkdir(gene_atlas_dir)
     download_variants_info(gene_atlas_dir)
@@ -127,7 +128,14 @@ function update_trait_to_variants_from_gene_atlas!(trait_to_variants, trait_key_
         # Check all variants in estimands have been found (i.e genotyped)
         notfound = setdiff(estimand_variants, independent_variants)
         isempty(notfound) || throw(ArgumentError(string("Did not find some estimands' variants in geneATLAS: ", notfound)))
-        trait_to_variants[trait] = independent_variants
+        # Limit Number of variants to max_variants
+        trait_to_variants[trait] = if length(independent_variants) > max_variants
+            non_requested_variants = shuffle(setdiff(independent_variants, estimand_variants))
+            non_requested_variants = non_requested_variants[1:max_variants-length(estimand_variants)]
+            vcat(collect(estimand_variants), non_requested_variants)
+        else
+            independent_variants
+        end
 
         # Remove trait geneATLAS dir
         remove_ga_data && rm(trait_outdir, recursive=true)
@@ -170,6 +178,7 @@ function simulation_inputs_from_gene_atlas(estimands_prefix;
     maf_threshold=0.01,
     pvalue_threshold=1e-5,
     distance_threshold=1e6,
+    max_variants=100,
     output_prefix="ga_sim_input",
     batchsize=10
     )
@@ -182,12 +191,13 @@ function simulation_inputs_from_gene_atlas(estimands_prefix;
     # Retrieve Trait to geneAtlas key map
     trait_key_map = get_trait_key_map(keys(trait_to_variants), trait_table_path=trait_table_path)
     # Update variant set for each trait using geneAtlas summary statistics
-    PopGenEstimatorComparison.update_trait_to_variants_from_gene_atlas!(trait_to_variants, trait_key_map; 
+    update_trait_to_variants_from_gene_atlas!(trait_to_variants, trait_key_map; 
         gene_atlas_dir=gene_atlas_dir,
         remove_ga_data=remove_ga_data,
         maf_threshold=maf_threshold,
         pvalue_threshold=pvalue_threshold,
-        distance_threshold=distance_threshold
+        distance_threshold=distance_threshold,
+        max_variants=max_variants
     )
 
     # Write all variants for dataset extraction

@@ -95,7 +95,8 @@ end
         "--pvalue-threshold=1e-5",
         "--distance-threshold=1e6",
         string("--output-prefix=", outprefix),
-        "--batchsize=2"
+        "--batchsize=2",
+        "--max-variants=10"
     ])
     PopGenEstimatorComparison.julia_main()
     # Estimand files
@@ -118,10 +119,11 @@ end
 
     # Conditional densities
     ## There should be 2 + n_variants densities
+    ## 10 variants per trait = 20 variants
     requested_variants = ["rs502771", "rs184270108", "rs11868112", "rs6456121"]
     variants = open(readlines, string(outprefix, "_variants.txt"))
     @test issubset(requested_variants, variants)
-    @test length(variants) > 20
+    @test length(variants) == 20 
     conditional_density_files = filter(x -> occursin("ga_sim_input_conditional_density", x), readdir(tmpdir, join=true))
     @test length(conditional_density_files) == length(variants) + 2
     density_targets = Set([])
