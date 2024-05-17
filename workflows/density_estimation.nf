@@ -1,5 +1,6 @@
 include { JuliaCmd; LongestPrefix } from '../modules/functions.nf'
 include { AggregateResults } from '../modules/aggregate.nf'
+include { DensityEstimation } from '../modules/density_estimation.nf'
 
 process Analyse {
     label 'bigmem'
@@ -46,32 +47,6 @@ process DensityEstimationInputs {
         ${JuliaCmd()} density-estimation-inputs ${dataset} ${estimands_prefix} \
             --batchsize=${params.BATCH_SIZE} \
             --output-prefix=de_
-        """
-}
-
-process DensityEstimation {
-    label 'multithreaded'
-    label 'bigmem'
-    publishDir "${params.OUTDIR}/density_estimation/density_estimates", mode: 'symlink'
-
-    input:
-        path dataset 
-        path density
-        
-    output:
-        path outfile
-
-    script:
-        file_splits = density.name.split("_")
-        prefix = file_splits[0..-2].join("_")
-        file_id = file_splits[-1][0..-6]
-        outfile = "${prefix}_estimate_${file_id}.hdf5"
-        """
-        ${JuliaCmd()} density-estimation ${dataset} ${density} \
-            --mode=study \
-            --output=${outfile} \
-            --train-ratio=${params.TRAIN_RATIO} \
-            --verbosity=${params.VERBOSITY}
         """
 }
 
