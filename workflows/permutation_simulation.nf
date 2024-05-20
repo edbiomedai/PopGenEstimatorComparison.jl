@@ -1,7 +1,8 @@
-include { MAKE_DATASET } from './workflows/dataset.nf'
-include { PermutationSimulation } from './workflows/permutation_simulation.nf'
+include { MakeDatasetFromVariants } from '../subworkflows/dataset.nf'
+include { PermutationSimulation } from './subworkflows/permutation_simulation.nf'
 
 workflow PERMUTATION_SIMULATION {
-    dataset = MAKE_DATASET()
+    variant_list = Channel.value(file(params.VARIANTS_LIST, checkIfExists: true))
+    dataset = MakeDatasetFromVariants(variant_list)
     PermutationSimulation(dataset)
 }

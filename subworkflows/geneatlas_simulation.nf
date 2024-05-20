@@ -83,6 +83,8 @@ workflow GeneATLASSimulation {
         estimands_files.collect(),
         ga_trait_table
     )
+    // Make Dataset
+    dataset = MakeDatasetFromVariants(simulation_inputs.variants)
 
     // Density Estimation
     density_estimates = DensityEstimation(

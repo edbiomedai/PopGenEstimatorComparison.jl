@@ -64,7 +64,7 @@ workflow PermutationSimulation {
         permutation_results = PermutationEstimation(dataset, combined)
 
         // Aggregation of Estimation Results
-        AggregateResults(permutation_results.collect(), "permutation_results.hdf5")
+        AggregateResults(permutation_results.collect(), "permutation_simulation_results.hdf5")
     
         // Analysis
         Analyse(AggregateResults.out, estimands.collect())

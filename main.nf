@@ -23,11 +23,7 @@ include { PERMUTATION_ESTIMATION } from './workflows/permutation_simulation.nf'
 include { GENE_ATLAS_SIMULATION } from './workflows/gene_atlas_simulation.nf'
 include { MAKE_DATASET } from './workflows/dataset.nf'
 
-include { GeneATLASSimulation } from './subworkflows/gene_atlas_simulation.nf'
-include { PermutationSimulation } from './workflows/permutation_simulation.nf'
-
 workflow {
-    dataset = MAKE_DATASET()
-    PermutationSimulation(dataset)
-    GeneATLASSimulation(dataset)
+    PERMUTATION_SIMULATION()
+    GENE_ATLAS_SIMULATION()
 }
