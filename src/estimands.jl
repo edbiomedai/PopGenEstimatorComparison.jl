@@ -113,7 +113,7 @@ function SaveVariantsAndEstimands(;outdir="assets", groupsize=5)
     isdir(estimands_dir) || mkdir(estimands_dir)
     estimands = groups_ordering(MakeEstimands())
     for (group_id, estimands_group) in enumerate(Iterators.partition(estimands, groupsize))
-        serialize(joinpath(outdir, string("estimands_", group_id, ".jls")), Configuration(estimands=estimands_group))
+        serialize(joinpath(estimands_dir, string("estimands_", group_id, ".jls")), Configuration(estimands=estimands_group))
     end
     # Save list of variants
     unique_variants = Set{Symbol}([])
