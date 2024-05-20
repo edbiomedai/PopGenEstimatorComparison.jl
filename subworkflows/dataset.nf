@@ -1,6 +1,6 @@
 include { MakeDataset } from '../modules/dataset.nf'
-include { IIDGenotypes; GeneticConfounders } from '../subworkflows/confounders.nf'
-include { ExtractTraits } from '../subworkflows/extract_traits.nf'
+include { IIDGenotypes; GeneticConfounders } from './confounders.nf'
+include { ExtractTraits } from './extract_traits.nf'
 
 workflow MakeDatasetFromVariants {
     take:

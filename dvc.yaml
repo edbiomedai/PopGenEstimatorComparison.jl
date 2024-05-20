@@ -8,13 +8,13 @@ stages:
         deps: 
             - scripts/make_variants_and_estimands_files.jl
         outs:
-            - assets/estimands
+            - assets/estimands/
             - assets/variants.txt
     simulation:
         wdir: geneatlas_simulation
         cmd: nextflow run ../main.nf -resume -with-trace -profile eddie -N s2042526@ed.ac.uk
         deps:
-            - ../assets/estimands
+            - ../assets/estimands/
             - nextflow.config
         outs:
             - results/permutation_simulation_results.hdf5

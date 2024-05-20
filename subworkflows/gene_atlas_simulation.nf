@@ -1,5 +1,6 @@
 include { DensityEstimation } from '../modules/density_estimation.nf'
 include { AggregateResults } from '../modules/aggregate.nf'
+include { MakeDatasetFromVariants } from './dataset.nf'
 include { JuliaCmd; LongestPrefix } from '../modules/functions.nf'
 
 process GeneAtlasSimulationInputs {
@@ -65,10 +66,6 @@ process EstimationFromDensityEstimates {
 }
 
 workflow GeneATLASSimulation {
-    take:
-    dataset
-
-    main:
     // General Simulation Input Grid
     estimands_files = Channel.fromPath(params.ESTIMANDS, checkIfExists: true)
     estimators = Channel.fromPath(params.ESTIMATORS, checkIfExists: true)

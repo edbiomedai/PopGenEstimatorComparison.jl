@@ -60,22 +60,22 @@ stages:
     cmd: julia --project --startup-file=no -e'using Pkg; Pkg.instantiate(); Pkg.precompile()'
     deps:
     - path: Manifest.toml
-      md5: b6549b9c0bfb1d349bc181cb323cbfbe
-      size: 95273
+      md5: dd1575c494f4ce5d2a04d98cee463738
+      size: 93314
   make-estimands:
-    cmd: julia --project --startup-file=no scripts/make_estimands_files.jl
+    cmd: julia --project --startup-file=no scripts/make_variants_and_estimands_files.jl
     deps:
-    - path: results/dataset.arrow
-      md5: c78dcb879c2111ecaf9b609be01486dc
-      size: 542735842
-    - path: scripts/make_estimands_files.jl
-      md5: 51918ab3b0c509b9b062b84382e708f2
-      size: 2487
+    - path: scripts/make_variants_and_estimands_files.jl
+      md5: ed2484a0c6cb3b67243c8aa15c3b68d2
+      size: 89
     outs:
-    - path: assets/estimands
-      md5: ec8474aaf691c10baae93c7d487b17a5.dir
-      size: 36720
-      nfiles: 10
+    - path: assets/estimands/
+      md5: d751713988987e9331980363e24189ce.dir
+      size: 0
+      nfiles: 0
+    - path: assets/variants.txt
+      md5: e185dbb6bd695098c88b24cf6da9a773
+      size: 286
   simulation:
     cmd: nextflow run ../main.nf -resume -profile eddie -N s2042526@ed.ac.uk
     deps:
