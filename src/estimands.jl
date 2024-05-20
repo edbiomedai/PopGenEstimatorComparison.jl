@@ -78,7 +78,7 @@ function epistatic_traits_to_variants()
         "G35 Multiple sclerosis" => [(:rs10419224, :rs59103106)],
         # Psoriasis: https://www.sciencedirect.com/science/article/pii/S0002929723000915
         "psoriasis" => [(:rs974766, :rs10132320)],
-        "L40 Psoriasis " => [(:rs974766, :rs10132320)]
+        "L40 Psoriasis" => [(:rs974766, :rs10132320)]
     )
 end
 

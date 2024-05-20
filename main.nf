@@ -18,6 +18,7 @@ params.UKB_WITHDRAWAL_LIST = "${workflow.projectDir}/assets/ukb_withdrawal_list.
 params.UKB_CONFIG = "${workflow.projectDir}/assets/ukbconfig.yaml"
 params.FLASHPCA_EXCLUSION_REGIONS = "${projectDir}/assets/exclusion_regions_hg19.txt"
 params.LD_BLOCKS = "${projectDir}/assets/NO_LD_BLOCKS"
+params.MAF_THRESHOLD = 0.01
 
 include { PERMUTATION_SIMULATION } from './workflows/permutation_simulation.nf'
 include { GENE_ATLAS_SIMULATION } from './workflows/gene_atlas_simulation.nf'
