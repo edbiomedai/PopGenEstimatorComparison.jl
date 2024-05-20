@@ -12,3 +12,4 @@ report*
 temp/
 sandbox.jl
 outputs/
+gene_atlas_data

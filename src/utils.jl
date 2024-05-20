@@ -195,6 +195,38 @@ end
 ###                    Estimand variables accessors                  ###
 ########################################################################
 
+function get_confounders_assert_equal(Ψ::TMLE.Estimand)
+    treatment_confounders = values(Ψ.treatment_confounders)
+    @assert allequal(treatment_confounders)
+    return first(treatment_confounders)
+end
+
+function get_confounders_assert_equal(Ψ::TMLE.ComposedEstimand)
+    args_confounders = [get_confounders_assert_equal(arg) for arg ∈ Ψ.args]
+    @assert allequal(args_confounders)
+    return first(args_confounders)
+end
+
+function get_confounders_assert_equal(estimands)
+    estimands_confounders = [get_confounders_assert_equal(Ψ) for Ψ ∈ estimands]
+    @assert allequal(estimands_confounders)
+    return first(estimands_confounders)
+end
+
+get_covariates_assert_equal(Ψ::TMLE.Estimand) = Ψ.outcome_extra_covariates
+
+function get_covariates_assert_equal(Ψ::TMLE.ComposedEstimand)
+    args_covariates = [get_covariates_assert_equal(arg) for arg ∈ Ψ.args]
+    @assert allequal(args_covariates)
+    return first(args_covariates)
+end
+
+function get_covariates_assert_equal(estimands)
+    estimands_covariates = [get_covariates_assert_equal(Ψ) for Ψ ∈ estimands]
+    @assert allequal(estimands_covariates)
+    return first(estimands_covariates)
+end
+
 function confounders_and_covariates_set(Ψ)
     confounders_and_covariates = Set{Symbol}([])
     push!(

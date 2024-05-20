@@ -18,6 +18,10 @@ function cli_settings()
             action = :command
             help = "Estimate a conditional density."
         
+        "simulation-inputs-from-ga"
+            action = :command
+            help = "Generate simulation inputs from geneATLAS."
+
         "analyse"
             action = :command
             help = "Run analyses script and generate plots."
@@ -166,6 +170,58 @@ function cli_settings()
 
     end
 
+    @add_arg_table! s["simulation-inputs-from-ga"] begin
+        "estimands-prefix"
+            arg_type = String
+            help = "A prefix to serialized TMLE.Configuration (accepted formats: .json | .yaml | .jls)"
+
+        "--ga-download-dir"
+            arg_type = String
+            default = "gene_atlas_data"
+            help = "Where the geneATLAS data will be downloaded"
+
+        "--ga-trait-table"
+            arg_type = String
+            default = joinpath("assets", "Traits_Table_GeneATLAS.csv")
+            help = "geneATLAS Trait Table."
+
+        "--remove-ga-data"
+            arg_type = Bool
+            default = true
+            help = "Removes geneATLAS downloaded data after execution."
+
+        "--maf-threshold"
+            arg_type = Float64
+            default = 0.01
+            help = "Only variants with at least `maf-threshold` are selected."
+        
+        "--pvalue-threshold"
+            arg_type = Float64
+            default = 1e-5
+            help = "Only variants with pvalue lower than `pvalue-threhsold` are selected."
+
+        "--distance-threshold"
+            arg_type = Float64
+            default = 1e6
+            help = "Only variants that are at least `distance-threhsold` away from each other are selected."
+        
+        "--max-variants"
+            arg_type = Int
+            default = 100
+            help = "Maximum variants retrieved per trait."
+
+        "--output-prefix"
+            arg_type = String
+            default = "ga_sim_input"
+            help = "Prefix to outputs."
+        
+        "--batchsize"
+            arg_type = Int
+            default = 10
+            help = "Estimands are further split in files of `batchsize`"
+            
+    end
+
     return s
 end
 
@@ -190,6 +246,19 @@ function julia_main()::Cint
             )
     elseif cmd == "aggregate"
         save_aggregated_df_results(cmd_settings["input-prefix"], cmd_settings["out"])
+    elseif cmd == "simulation-inputs-from-ga"
+        simulation_inputs_from_gene_atlas(
+            cmd_settings["estimands-prefix"];
+            gene_atlas_dir=cmd_settings["ga-download-dir"],
+            remove_ga_data=cmd_settings["remove-ga-data"], 
+            trait_table_path=cmd_settings["ga-trait-table"],
+            maf_threshold=cmd_settings["maf-threshold"],
+            pvalue_threshold=cmd_settings["pvalue-threshold"],
+            distance_threshold=cmd_settings["distance-threshold"],
+            output_prefix=cmd_settings["output-prefix"],
+            batchsize=cmd_settings["batchsize"],
+            max_variants=cmd_settings["max-variants"]
+        )
     elseif cmd == "density-estimation-inputs"
         density_estimation_inputs(
             cmd_settings["dataset"],

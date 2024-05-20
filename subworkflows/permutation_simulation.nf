@@ -49,21 +49,23 @@ process PermutationEstimation {
         """
 }
 
-workflow PERMUTATION_ESTIMATION {
-    origin_dataset = Channel.value(file(params.DATASET, checkIfExists: true))
+workflow PermutationSimulation {
+    take:
+        dataset
 
-    estimators = Channel.fromPath(params.ESTIMATORS, checkIfExists: true)
-    estimands = Channel.fromPath(params.ESTIMANDS, checkIfExists: true)
-    sample_sizes = Channel.fromList(params.SAMPLE_SIZES)
-    rngs = Channel.fromList(params.RNGS)
-    combined = estimators.combine(estimands).combine(sample_sizes).combine(rngs)
+    main:
+        estimators = Channel.fromPath(params.ESTIMATORS, checkIfExists: true)
+        estimands = Channel.fromPath(params.ESTIMANDS, checkIfExists: true)
+        sample_sizes = Channel.fromList(params.SAMPLE_SIZES)
+        rngs = Channel.fromList(params.RNGS)
+        combined = estimators.combine(estimands).combine(sample_sizes).combine(rngs)
 
-    // Estimation
-    permutation_results = PermutationEstimation(origin_dataset, combined)
+        // Estimation
+        permutation_results = PermutationEstimation(dataset, combined)
 
-    // Aggregation of Estimation Results
-    AggregateResults(permutation_results.collect(), "permutation_results.hdf5")
+        // Aggregation of Estimation Results
+        AggregateResults(permutation_results.collect(), "permutation_simulation_results.hdf5")
     
-    // Analysis
-    Analyse(AggregateResults.out, estimands.collect())
+        // Analysis
+        Analyse(AggregateResults.out, estimands.collect())
 }

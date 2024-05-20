@@ -1,97 +1,16 @@
 schema: '2.0'
 stages:
-  discovery:
-    cmd: nextflow run https://github.com/TARGENE/targene-pipeline -r 2ca5a9272dc84b606092ffac621b807758cbc112
-      -entry MAKE_DATASET -profile eddie -resume -with-trace -with-report -N s2042526@ed.ac.uk
-    deps:
-    - path: /exports/igmm/eddie/UK-BioBank-53116/genotypes/ukb_53116_chr1.bed
-      md5: 21c39fb15932a07f2a622aac804f11fb
-      size: 7751445268
-    - path: /exports/igmm/eddie/UK-BioBank-53116/imputed/ukb_53116_chr1.bgen
-      md5: a927fc2e77171d1df59480d647721bdb
-      size: 194508985673
-    - path: /exports/igmm/eddie/UK-BioBank-53116/imputed/ukb_snp_qc.txt
-      md5: 466d1e77a834defedabfc24cb520d967
-      size: 371289758
-    - path: /exports/igmm/eddie/UK-BioBank-53116/phenotypes/encoding.ukb
-      md5: 46893107a1ee2f6c11c1084614950e21
-      size: 12840633
-    - path: /exports/igmm/eddie/UK-BioBank-53116/phenotypes/ukb45981.enc_ukb
-      md5: eceb71eb8e264dc96326a5b0a4eb5b81
-      size: 16731688880
-    - path: assets
-      md5: 48dadd7df71d52ed656fd3dd799477fd.dir
-      size: 2255250833
-      nfiles: 12
-    - path: nextflow.config
-      md5: 433b71f553caac2f2efe871b824dfb75
-      size: 728
-    outs:
-    - path: results/dataset.arrow
-      md5: c78dcb879c2111ecaf9b609be01486dc
-      size: 542735842
-  make-dataset:
-    cmd: nextflow run https://github.com/TARGENE/targene-pipeline -r v0.10.0 -entry
-      MAKE_DATASET -profile local -resume -N s2042526@ed.ac.uk
-    deps:
-    - path: /exports/igmm/eddie/UK-BioBank-53116/genotypes/ukb_53116_chr1.bed
-      md5: 21c39fb15932a07f2a622aac804f11fb
-      size: 7751445268
-    - path: /exports/igmm/eddie/UK-BioBank-53116/imputed/ukb_53116_chr1.bgen
-      md5: a927fc2e77171d1df59480d647721bdb
-      size: 194508985673
-    - path: /exports/igmm/eddie/UK-BioBank-53116/imputed/ukb_snp_qc.txt
-      md5: 466d1e77a834defedabfc24cb520d967
-      size: 371289758
-    - path: /exports/igmm/eddie/UK-BioBank-53116/phenotypes/encoding.ukb
-      md5: 46893107a1ee2f6c11c1084614950e21
-      size: 12840633
-    - path: /exports/igmm/eddie/UK-BioBank-53116/phenotypes/ukb45981.enc_ukb
-      md5: eceb71eb8e264dc96326a5b0a4eb5b81
-      size: 16731688880
-    - path: nextflow.config
-      md5: c1e12037603ba89b943d930b05770663
-      size: 745
-    outs:
-    - path: results/dataset.arrow
-      md5: ffece6148c4debe75dd634e17d9c65b3
-      size: 124029586
-  instantiate-project:
-    cmd: julia --project --startup-file=no -e'using Pkg; Pkg.instantiate(); Pkg.precompile()'
-    deps:
-    - path: Manifest.toml
-      md5: b6549b9c0bfb1d349bc181cb323cbfbe
-      size: 95273
   make-estimands:
-    cmd: julia --project --startup-file=no scripts/make_estimands_files.jl
+    cmd: julia --project --startup-file=no scripts/make_variants_and_estimands_files.jl
     deps:
-    - path: results/dataset.arrow
-      md5: c78dcb879c2111ecaf9b609be01486dc
-      size: 542735842
-    - path: scripts/make_estimands_files.jl
-      md5: 51918ab3b0c509b9b062b84382e708f2
-      size: 2487
+    - path: scripts/make_variants_and_estimands_files.jl
+      md5: ed2484a0c6cb3b67243c8aa15c3b68d2
+      size: 89
     outs:
-    - path: assets/estimands
-      md5: ec8474aaf691c10baae93c7d487b17a5.dir
-      size: 36720
-      nfiles: 10
-  simulation:
-    cmd: nextflow run ../main.nf -resume -profile eddie -N s2042526@ed.ac.uk
-    deps:
-    - path: ../assets/estimands/estimands.jls
-      md5: 51e0148aeeda431c533c4b0ec8778257
-      size: 32061
-    - path: ../dataset/results/dataset.arrow
-      md5: ffece6148c4debe75dd634e17d9c65b3
-      size: 124029586
-    - path: nextflow.config
-      md5: cf8c1be881167ce59333bc40a946f2d6
-      size: 374
-    outs:
-    - path: results/from_densities_results.hdf5
-      md5: 6ba4cb2e3f2d78c2bd67c6d250539c17
-      size: 968531471
-    - path: results/permutation_results.hdf5
-      md5: 6109fdf669ef9f57498f5dc3f738022e
-      size: 940881821
+    - path: assets/estimands/
+      md5: b0d654ad8512a2456195ce798cfa0226.dir
+      size: 34794
+      nfiles: 6
+    - path: assets/variants.txt
+      md5: e185dbb6bd695098c88b24cf6da9a773
+      size: 286

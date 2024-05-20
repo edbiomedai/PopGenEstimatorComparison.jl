@@ -1,34 +1,21 @@
 stages:
-    make-dataset:
-        wdir: dataset
-        cmd: nextflow run https://github.com/TARGENE/targene-pipeline -r v0.10.0 -entry MAKE_DATASET -profile local -resume -N s2042526@ed.ac.uk
-        deps:
-            - nextflow.config
-            - /exports/igmm/eddie/UK-BioBank-53116/imputed/ukb_snp_qc.txt
-            - /exports/igmm/eddie/UK-BioBank-53116/phenotypes/ukb45981.enc_ukb
-            - /exports/igmm/eddie/UK-BioBank-53116/phenotypes/encoding.ukb
-            - /exports/igmm/eddie/UK-BioBank-53116/imputed/ukb_53116_chr1.bgen
-            - /exports/igmm/eddie/UK-BioBank-53116/genotypes/ukb_53116_chr1.bed
-        outs:
-            - results/dataset.arrow
     instantiate-project:
         deps: 
             - Manifest.toml
         cmd: julia --project --startup-file=no -e'using Pkg; Pkg.instantiate(); Pkg.precompile()'
     make-estimands:
-        cmd: julia --project --startup-file=no scripts/make_estimands_files.jl
+        cmd: julia --project --startup-file=no scripts/make_variants_and_estimands_files.jl
         deps: 
-            - results/dataset.arrow
-            - scripts/make_estimands_files.jl
+            - scripts/make_variants_and_estimands_files.jl
         outs:
-            - assets/estimands
+            - assets/estimands/
+            - assets/variants.txt
     simulation:
-        wdir: simulation
+        wdir: geneatlas_simulation
         cmd: nextflow run ../main.nf -resume -with-trace -profile eddie -N s2042526@ed.ac.uk
         deps:
-            - ../dataset/results/dataset.arrow
-            - ../assets/estimands
+            - ../assets/estimands/
             - nextflow.config
         outs:
-            - results/permutation_results.hdf5
-            - results/from_densities_results.hdf5
+            - results/permutation_simulation_results.hdf5
+            - results/gene_atlas_simulation_results.hdf5

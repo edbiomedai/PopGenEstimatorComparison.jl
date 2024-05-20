@@ -92,16 +92,31 @@ traits:
           - "H025"
           - "H026"
           - "H027"
+      - name: "L40 Psoriasis"
+        codings:
+          - "L400"
+          - "L401"
+          - "L402"
+          - "L403"
+          - "L404"
+          - "L405"
+          - "L408"
+          - "L409"
   - fields:
       - "20002"
     phenotypes:
       - name: "sarcoidosis"
         codings:
           - "1371"
-  - fields:
-      - "30890"
-    phenotypes:
-      - name: "Vitamin D Level"
+      - name: "type 2 diabetes"
+        codings:
+          - "1223"
+      - name: "G20 Parkinson's disease"
+        codings:
+          - "G20"
+      - name: "psoriasis"
+        codings:
+          - "1453"
   - fields:
       - "30000"
     phenotypes:
@@ -111,6 +126,14 @@ traits:
     phenotypes:
       - name: "Trunk fat percentage"
   - fields:
+      - "21001"
+    phenotypes:
+      - name: "Body mass index (BMI)"
+  - fields:
+      - "1717"
+    phenotypes:
+      - name: "Skin colour"
+  - fields:
       - "21003"
     phenotypes:
       - name: "Age-Assessment"
@@ -118,8 +141,5 @@ traits:
       - "22001"
     phenotypes:
       - name: "Genetic-Sex"
-  - fields:
-      - "1747"
-    phenotypes:
-      - name: "Red-Hair"
-        codings: [2]
+
+  

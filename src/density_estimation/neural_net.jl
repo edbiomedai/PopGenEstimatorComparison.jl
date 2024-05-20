@@ -20,7 +20,7 @@ compute_loss(model, x, y::OneHotMatrix) = Flux.logitcrossentropy(model(x), y)
 
 function sample_from(model::Chain, X, labels)
     ps = softmax(model(X))
-    indicators = [rand(Categorical(collect(p))) for p in eachcol(ps)]
+    indicators = [rand(Distributions.Categorical(collect(p))) for p in eachcol(ps)]
     return categorical([labels[i] for i in indicators], levels=labels)
 end
 
