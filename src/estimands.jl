@@ -50,10 +50,8 @@ MakeIATE(treatment_levels, outcome) = factorialEstimand(IATE, treatment_levels, 
     outcome_extra_covariates=EXTRA_COVARIATES
     )
 
-function MakeEstimands()
-    estimands = []
-    # All single variant effects identified trough the geneATLAS
-    outcome_to_variants = Dict(
+function geneatlas_traits_to_variants()
+    return Dict(
         # White blood cell counts: Count
         "White blood cell (leukocyte) count" => (:rs3859191, :rs9268219),
         # Sarcoidosis : rare ~ 500 cases
@@ -68,7 +66,26 @@ function MakeEstimands()
         # T2D ~ 2800 cases
         "type 2 diabetes" => (:rs4506565, :rs115397110)
     )
-    for (outcome, variants) ∈ outcome_to_variants
+end
+
+function epistatic_traits_to_variants()
+    return Dict(
+        # Skin colour: https://www.nature.com/articles/s41467-018-07691-z
+        "Skin colour" => [(:rs1805007, :rs6088372), (:rs1805005, :rs6059655), (:rs1805008, :rs1129038)],
+        # Parkison: https://pubmed.ncbi.nlm.nih.gov/31234232/
+        "G20 Parkinson's disease" => [(:rs1732170, :rs456998, :rs356219, :rs8111699), (:rs11868112, :rs6456121, :rs356219)],
+        # MS: https://www.sciencedirect.com/science/article/pii/S0002929723000915
+        "G35 Multiple sclerosis" => [(:rs10419224, :rs59103106)],
+        # Psoriasis: https://www.sciencedirect.com/science/article/pii/S0002929723000915
+        "psoriasis" => [(:rs974766, :rs10132320)],
+        "L40 Psoriasis " => [(:rs974766, :rs10132320)]
+    )
+end
+
+function MakeEstimands()
+    estimands = []
+    # All single variant effects identified trough the geneATLAS
+    for (outcome, variants) ∈ geneatlas_traits_to_variants()
         # Make Single variant effects reported by geneATLAS
         for variant in variants
             treatment_levels = make_treatment_levels((variant,))
@@ -80,18 +97,7 @@ function MakeEstimands()
     end
 
     # All Epistatic Interactions identified through various sources
-    outcome_to_variants = Dict(
-        # Skin colour: https://www.nature.com/articles/s41467-018-07691-z
-        "Skin colour" => [(:rs1805007, :rs6088372), (:rs1805005, :rs6059655), (:rs1805008, :rs1129038)],
-        # Parkison: https://pubmed.ncbi.nlm.nih.gov/31234232/
-        "G20 Parkinson's disease" => [(:rs1732170, :rs456998, :rs356219, :rs8111699), (:rs11868112, :rs6456121, :rs356219)],
-        # MS: https://www.sciencedirect.com/science/article/pii/S0002929723000915
-        "G35 Multiple sclerosis" => [(:rs10419224, :rs59103106)],
-        # Psoriasis: https://www.sciencedirect.com/science/article/pii/S0002929723000915
-        "psoriasis" => [(:rs974766, :rs10132320)],
-        "L40 Psoriasis " => [(:rs974766, :rs10132320)]
-    )
-    for (outcome, variants_tuples) ∈ outcome_to_variants
+    for (outcome, variants_tuples) ∈ epistatic_traits_to_variants()
         for variants in variants_tuples
             treatment_levels = make_treatment_levels(variants)
             push!(estimands, MakeIATE(treatment_levels, outcome))
@@ -101,9 +107,28 @@ function MakeEstimands()
     return estimands
 end
 
-function SaveEstimands(;outdir=joinpath("assets", "estimands"), groupsize=5)
+function SaveVariantsAndEstimands(;outdir="assets", groupsize=5)
+    # Make and save estimands
+    estimands_dir = joinpath(outdir, "estimands")
+    isdir(estimands_dir) || mkdir(estimands_dir)
     estimands = groups_ordering(MakeEstimands())
     for (group_id, estimands_group) in enumerate(Iterators.partition(estimands, groupsize))
         serialize(joinpath(outdir, string("estimands_", group_id, ".jls")), Configuration(estimands=estimands_group))
     end
+    # Save list of variants
+    unique_variants = Set{Symbol}([])
+    for variant_tuple ∈ values(geneatlas_traits_to_variants())
+        union!(unique_variants, variant_tuple)
+    end
+    for variant_tuple_list ∈ values(epistatic_traits_to_variants())
+        for variant_tuple ∈ variant_tuple_list
+            union!(unique_variants, variant_tuple)
+        end
+    end
+    open(joinpath(outdir, "variants.txt"), "w") do io
+        for variant ∈ unique_variants
+            println(io, variant)
+        end
+    end
+
 end
