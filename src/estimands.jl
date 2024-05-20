@@ -100,3 +100,10 @@ function MakeEstimands()
 
     return estimands
 end
+
+function SaveEstimands(;outdir=joinpath("assets", "estimands"), groupsize=5)
+    estimands = groups_ordering(MakeEstimands())
+    for (group_id, estimands_group) in enumerate(Iterators.partition(estimands, groupsize))
+        serialize(joinpath(outdir, string("estimands_", group_id, ".jls")), Configuration(estimands=estimands_group))
+    end
+end
